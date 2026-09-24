@@ -48,18 +48,22 @@ router.post("/events", (req, res) => {
   }
 
   // Generate slug if not provided, or sanitize provided slug
-  let cleanSlug = (slug || title)
+  let cleanSlug = (slug || "")
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-  if (!cleanSlug) cleanSlug = "event-" + Date.now().toString(36);
-
-  // Check unique slug
-  const existing = db.prepare("SELECT id FROM events WHERE slug = ?").get(cleanSlug);
-  if (existing) {
-    cleanSlug = `${cleanSlug}-${Math.floor(1000 + Math.random() * 9000)}`;
+  if (!cleanSlug) {
+    const randomSuffix = crypto.randomBytes(8).toString("hex");
+    const base = title.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 24);
+    cleanSlug = base ? `${base}-${randomSuffix}` : `event-${randomSuffix}`;
+  } else {
+    // Check unique slug and append long random token if collision
+    const existing = db.prepare("SELECT id FROM events WHERE slug = ?").get(cleanSlug);
+    if (existing) {
+      cleanSlug = `${cleanSlug}-${crypto.randomBytes(6).toString("hex")}`;
+    }
   }
 
   const result = db.prepare(`

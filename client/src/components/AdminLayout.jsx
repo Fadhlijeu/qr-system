@@ -1,16 +1,4 @@
 import React, { useState } from "react";
-import {
-  LayoutDashboard,
-  Users,
-  QrCode,
-  Calendar,
-  LogOut,
-  Menu,
-  X,
-  ExternalLink,
-  ChevronRight,
-  Ticket
-} from "lucide-react";
 import { setAuthToken } from "../api";
 
 export function AdminLayout({
@@ -21,7 +9,7 @@ export function AdminLayout({
   currentEvent,
   children
 }) {
-  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const handleLogout = () => {
     setAuthToken(null);
@@ -29,18 +17,56 @@ export function AdminLayout({
   };
 
   const navItems = [
-    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { id: "participants", label: "Peserta", icon: Users },
-    { id: "scanner", label: "QR Scanner", icon: QrCode },
-    { id: "events", label: "Acara", icon: Calendar },
+    {
+      id: "dashboard",
+      label: "Dashboard",
+      icon: (
+        <svg viewBox="0 0 24 24">
+          <path d="M3 12 12 3l9 9" />
+          <path d="M5 10v10h14V10" />
+        </svg>
+      )
+    },
+    {
+      id: "participants",
+      label: "Daftar Peserta",
+      icon: (
+        <svg viewBox="0 0 24 24">
+          <circle cx="12" cy="8" r="4" />
+          <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8" />
+        </svg>
+      )
+    },
+    {
+      id: "scanner",
+      label: "Scan QR Tamu",
+      icon: (
+        <svg viewBox="0 0 24 24">
+          <rect x="3" y="3" width="7" height="7" />
+          <rect x="14" y="3" width="7" height="7" />
+          <rect x="3" y="14" width="7" height="7" />
+          <rect x="14" y="14" width="3" height="3" />
+          <rect x="18" y="18" width="3" height="3" />
+        </svg>
+      )
+    },
+    {
+      id: "events",
+      label: "Daftar Acara",
+      icon: (
+        <svg viewBox="0 0 24 24">
+          <rect x="3" y="4" width="18" height="18" rx="2" />
+          <path d="M16 2v4M8 2v4M3 10h18" />
+        </svg>
+      )
+    }
   ];
 
   const handleNavClick = (tabId) => {
     setActiveTab(tabId);
-    setMobileDrawerOpen(false);
+    setDrawerOpen(false);
   };
 
-  // Extract initials for avatar
   const initials = admin?.name
     ? admin.name
         .split(" ")
@@ -50,175 +76,230 @@ export function AdminLayout({
         .toUpperCase()
     : "AD";
 
-  const SidebarContent = () => (
-    <div className="flex flex-col h-full bg-[#0e1322] border-r border-white/5">
-      {/* Brand / Logo */}
-      <div className="p-5 border-b border-white/5 flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-sm shrink-0">
-          <Ticket className="w-5 h-5" />
-        </div>
-        <div className="overflow-hidden">
-          <h1 className="font-bold text-sm text-white tracking-tight leading-tight truncate">
-            QR Event
-          </h1>
-          <span className="text-[10px] text-slate-400 font-mono tracking-wider uppercase block">
-            Management System
-          </span>
-        </div>
-      </div>
-
-      {/* Current Event Context Badge */}
-      {currentEvent && (
-        <div className="px-4 pt-4 pb-2">
-          <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/5 flex items-center justify-between gap-2">
-            <div className="min-w-0">
-              <span className="text-[10px] uppercase font-bold text-indigo-400 block tracking-wider">
-                Acara Aktif
-              </span>
-              <p className="text-xs font-semibold text-slate-200 truncate">
-                {currentEvent.title}
-              </p>
-            </div>
-            <button
-              onClick={() => handleNavClick("events")}
-              className="text-[10px] text-slate-400 hover:text-white transition-colors underline shrink-0"
-              title="Ganti Acara"
-            >
-              Ganti
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Main Nav Items */}
-      <div className="flex-1 py-4 px-3 space-y-1">
-        <div className="px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-          Menu Utama
-        </div>
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = activeTab === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => handleNavClick(item.id)}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium transition-all ${
-                isActive
-                  ? "bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-600/20"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]"
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-slate-400"}`} />
-                <span>{item.label}</span>
-              </div>
-              {isActive && <ChevronRight className="w-3.5 h-3.5 text-white/70" />}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Footer / Admin Profile */}
-      <div className="p-4 border-t border-white/5 bg-black/20">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center text-xs font-bold text-indigo-300 shrink-0">
-              {initials}
-            </div>
-            <div className="min-w-0">
-              <span className="text-xs font-semibold text-slate-200 block truncate">
-                {admin?.name || "Admin"}
-              </span>
-              <span className="text-[11px] text-slate-400 block truncate">
-                {admin?.email}
-              </span>
-            </div>
-          </div>
-
-          <button
-            onClick={handleLogout}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
-            title="Keluar"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+  const publicGuestUrl = currentEvent
+    ? `${window.location.origin}/e/${currentEvent.slug}`
+    : null;
 
   return (
-    <div className="min-h-screen bg-[#0b0f19] flex text-slate-100">
-      <div className="bg-ambient-clean" />
+    <div className={`shell ${drawerOpen ? "has-drawer-open" : ""}`}>
+      {/* Drawer Backdrop for Mobile */}
+      <div
+        className="drawer-backdrop"
+        onClick={() => setDrawerOpen(false)}
+        aria-hidden="true"
+      />
 
-      {/* Desktop Sidebar (Fixed 250px) */}
-      <aside className="hidden md:block w-64 shrink-0 h-screen sticky top-0 z-30">
-        <SidebarContent />
-      </aside>
-
-      {/* Mobile Drawer Overlay */}
-      {mobileDrawerOpen && (
-        <div className="md:hidden fixed inset-0 z-50 flex">
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => setMobileDrawerOpen(false)}
-          />
-          <div className="relative w-64 max-w-[80vw] h-full z-10 animate-in slide-in-from-left duration-200">
-            <SidebarContent />
+      {/* Adminator Sidebar */}
+      <aside className="d-sidebar">
+        {/* Brand Header */}
+        <div className="brand">
+          <div className="brand-logo">
+            <svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+              <path
+                fill="#ffffff"
+                d="M14.747 9.125c.527-1.426 1.736-2.573 3.317-2.573c1.643 0 2.792 1.085 3.318 2.573l6.077 16.867c.186.496.248.931.248 1.147c0 1.209-.992 2.046-2.139 2.046c-1.303 0-1.954-.682-2.264-1.611l-.931-2.915h-8.62l-.93 2.884c-.31.961-.961 1.642-2.232 1.642c-1.24 0-2.294-.93-2.294-2.17c0-.496.155-.868.217-1.023l6.233-16.867zm.34 11.256h5.891l-2.883-8.992h-.062l-2.946 8.992z"
+              />
+            </svg>
+          </div>
+          <div className="brand-text">
+            <div className="brand-name">Adminator</div>
+            <div className="brand-tag">QR Event System</div>
           </div>
         </div>
-      )}
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 relative z-10">
-        {/* Topbar */}
-        <header className="h-14 border-b border-white/5 bg-[#0e1322]/80 backdrop-blur-md sticky top-0 z-20 px-4 md:px-8 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {/* Mobile Hamburger Button */}
-            <button
-              onClick={() => setMobileDrawerOpen(true)}
-              className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5"
+        {/* Current Event Context Pill */}
+        {currentEvent ? (
+          <div style={{ padding: "0 10px" }}>
+            <div
+              style={{
+                padding: "8px 12px",
+                borderRadius: "8px",
+                background: "var(--bg-muted)",
+                border: "1px solid var(--border-soft)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "8px"
+              }}
             >
-              <Menu className="w-5 h-5" />
-            </button>
-
-            {/* Breadcrumb / Title */}
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-slate-400 hidden sm:inline">Admin Portal</span>
-              <span className="text-slate-600 hidden sm:inline">/</span>
-              <span className="font-semibold text-white capitalize">
-                {navItems.find((n) => n.id === activeTab)?.label || "Dashboard"}
-              </span>
+              <div style={{ minWidth: 0 }}>
+                <span
+                  style={{
+                    fontSize: "9px",
+                    fontFamily: "JetBrains Mono, monospace",
+                    color: "var(--primary)",
+                    fontWeight: 600,
+                    textTransform: "uppercase",
+                    display: "block"
+                  }}
+                >
+                  Acara Aktif
+                </span>
+                <div
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    color: "var(--t-base)",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis"
+                  }}
+                >
+                  {currentEvent.title}
+                </div>
+              </div>
+              <button
+                onClick={() => handleNavClick("events")}
+                style={{
+                  fontSize: "11px",
+                  color: "var(--t-light)",
+                  textDecoration: "underline",
+                  cursor: "pointer"
+                }}
+              >
+                Ganti
+              </button>
             </div>
           </div>
+        ) : (
+          <div style={{ padding: "0 10px" }}>
+            <button
+              onClick={() => handleNavClick("events")}
+              className="btn btn--primary"
+              style={{ width: "100%", fontSize: "12px", padding: "7px 10px" }}
+            >
+              + Buat Acara Baru
+            </button>
+          </div>
+        )}
 
-          {/* Topbar Right Actions */}
-          <div className="flex items-center gap-3">
+        {/* Navigation Sections */}
+        <nav className="nav-section">
+          <div className="nav-label">Menu Acara</div>
+          {navItems.map((item) => {
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleNavClick(item.id)}
+                className={`nav-link ${isActive ? "is-active" : ""}`}
+                type="button"
+              >
+                {item.icon}
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Sidebar Workspace / User Footer */}
+        <div className="sidebar-footer">
+          <div className="workspace">
+            <div className="workspace-avatar">{initials}</div>
+            <div className="workspace-text">
+              <div className="workspace-name">{admin?.name || "Admin"}</div>
+              <div className="workspace-role">{admin?.email || "admin@example.com"}</div>
+            </div>
+            <button
+              onClick={handleLogout}
+              style={{
+                color: "var(--danger)",
+                padding: "6px",
+                borderRadius: "6px",
+                cursor: "pointer"
+              }}
+              title="Keluar"
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Panel */}
+      <div className="main">
+        {/* Adminator Topbar */}
+        <header className="d-topbar">
+          <div className="crumbs">
+            <button
+              className="hamburger"
+              onClick={() => setDrawerOpen(!drawerOpen)}
+              aria-label="Toggle navigation"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
+            <span>Admin</span>
+            <svg className="sep" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="m9 18 6-6-6-6" />
+            </svg>
             {currentEvent && (
+              <>
+                <span style={{ maxWidth: "160px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {currentEvent.title}
+                </span>
+                <svg className="sep" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="m9 18 6-6-6-6" />
+                </svg>
+              </>
+            )}
+            <span className="current">
+              {navItems.find((n) => n.id === activeTab)?.label || "Dashboard"}
+            </span>
+          </div>
+
+          <div className="topbar-actions">
+            {publicGuestUrl && (
               <a
-                href={`/e/${currentEvent.slug}`}
+                href={publicGuestUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="hidden sm:inline-flex items-center gap-1.5 text-xs text-slate-300 hover:text-white px-2.5 py-1.5 rounded-lg bg-white/[0.04] border border-white/5 transition-colors"
-                title="Buka Halaman Form Tamu"
+                className="btn btn--ghost"
+                style={{ fontSize: "12px", padding: "6px 12px" }}
               >
-                <span>Halaman Tamu</span>
-                <ExternalLink className="w-3.5 h-3.5 text-indigo-400" />
+                <span>Link Registrasi Tamu</span>
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3" />
+                </svg>
               </a>
             )}
 
-            <div className="flex items-center gap-2 pl-2 border-l border-white/5">
-              <div className="w-7 h-7 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-[11px] font-bold text-indigo-300">
-                {initials}
-              </div>
-            </div>
+            {activeTab !== "scanner" && (
+              <button
+                onClick={() => setActiveTab("scanner")}
+                className="btn btn--primary"
+                style={{ fontSize: "12px", padding: "6px 12px" }}
+              >
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="7" height="7" />
+                  <rect x="14" y="3" width="7" height="7" />
+                  <rect x="3" y="14" width="7" height="7" />
+                  <rect x="14" y="14" width="7" height="7" />
+                </svg>
+                <span>Scan QR</span>
+              </button>
+            )}
           </div>
         </header>
 
-        {/* Content Body */}
-        <main className="flex-1 p-4 md:p-8 max-w-7xl w-full mx-auto">
+        {/* Content Canvas */}
+        <main className="content">
           {children}
         </main>
+
+        {/* Adminator Footer */}
+        <footer className="d-footer">
+          <div>© 2026 · Adminator QR Event System</div>
+          <div className="d-footer-meta">
+            <span>Clean Architecture</span>
+            <span>v4.1.2</span>
+          </div>
+        </footer>
       </div>
     </div>
   );

@@ -14,7 +14,7 @@ export function App() {
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [adminUser, setAdminUser] = useState(null);
   const [activeAdminTab, setActiveAdminTab] = useState("dashboard");
-  const [selectedEventId, setSelectedEventId] = useState(1);
+  const [selectedEventId, setSelectedEventId] = useState(null);
   const [currentEvent, setCurrentEvent] = useState(null);
   const [authChecking, setAuthChecking] = useState(true);
 
@@ -44,13 +44,20 @@ export function App() {
     checkAuth();
   }, []);
 
-  // Fetch current selected event details for layout context
+  // Fetch events list and auto-select active event
   useEffect(() => {
-    if (adminUser && selectedEventId) {
+    if (adminUser) {
       api
-        .getDashboard(selectedEventId)
+        .getEvents()
         .then((res) => {
-          if (res?.event) setCurrentEvent(res.event);
+          if (res.events && res.events.length > 0) {
+            const matched = res.events.find((e) => e.id === selectedEventId) || res.events[0];
+            setSelectedEventId(matched.id);
+            setCurrentEvent(matched);
+          } else {
+            setSelectedEventId(null);
+            setCurrentEvent(null);
+          }
         })
         .catch(() => {});
     }
@@ -69,8 +76,8 @@ export function App() {
   if (path.startsWith("/admin")) {
     if (authChecking) {
       return (
-        <div className="min-h-screen bg-[#0b0f19] flex items-center justify-center text-xs text-slate-400 gap-2">
-          <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />
+        <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center text-xs text-slate-500 gap-2">
+          <Loader2 className="w-4 h-4 animate-spin text-slate-700" />
           <span>Memeriksa sesi login...</span>
         </div>
       );

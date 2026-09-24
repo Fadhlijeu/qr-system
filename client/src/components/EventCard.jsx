@@ -35,23 +35,20 @@ export function EventCard({
   return (
     <div
       onClick={onSelect}
-      className={`card-pro overflow-hidden cursor-pointer transition-all duration-200 flex flex-col ${
+      className={`card-hi overflow-hidden cursor-pointer transition-all duration-150 flex flex-col ${
         isSelected
-          ? "border-indigo-500/60 ring-1 ring-indigo-500/40 bg-[#162038]"
-          : "hover:border-slate-700 hover:bg-[#151e33]"
+          ? "border-slate-900 ring-2 ring-slate-900/10 shadow-sm"
+          : "hover:border-slate-300 hover:shadow-sm"
       }`}
     >
       {/* Top Banner / Cover */}
-      <div className="relative h-28 bg-gradient-to-br from-indigo-900/60 via-slate-900 to-slate-950 p-4 flex items-start justify-between border-b border-white/5 overflow-hidden">
-        {/* Subtle patterned background decoration */}
-        <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#818cf8_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
-
+      <div className="relative h-24 bg-slate-100 p-4 flex items-start justify-between border-b border-slate-200 overflow-hidden">
         {/* Date Stamp Badge (Hi.Events signature style) */}
-        <div className="relative z-10 w-12 h-14 bg-slate-900/90 border border-white/10 rounded-lg flex flex-col items-center justify-center text-center shadow-md">
-          <span className="text-[10px] font-bold uppercase text-indigo-400 font-mono tracking-wider">
+        <div className="relative z-10 w-11 h-13 bg-white border border-slate-200 rounded-lg flex flex-col items-center justify-center text-center shadow-xs">
+          <span className="text-[9px] font-bold uppercase text-indigo-600 font-mono tracking-wider">
             {month}
           </span>
-          <span className="text-base font-extrabold text-white leading-none font-display">
+          <span className="text-base font-extrabold text-slate-900 leading-none font-display">
             {day}
           </span>
         </div>
@@ -72,7 +69,7 @@ export function EventCard({
                 e.stopPropagation();
                 onEdit(event);
               }}
-              className="p-1.5 rounded-lg bg-slate-900/70 text-slate-400 hover:text-white border border-white/10 transition-colors"
+              className="p-1.5 rounded-lg bg-white text-slate-600 hover:text-slate-900 border border-slate-200 shadow-xs transition-colors cursor-pointer"
               title="Edit Acara"
             >
               <Edit3 className="w-3.5 h-3.5" />
@@ -82,25 +79,26 @@ export function EventCard({
       </div>
 
       {/* Card Body */}
-      <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+      <div className="p-5 flex-1 flex flex-col justify-between space-y-4 bg-white">
         <div>
           <div className="flex items-start justify-between gap-2">
-            <h3 className="font-bold text-white text-base leading-snug truncate">
+            <h3 className="font-bold text-slate-900 text-base leading-snug truncate font-display">
               {event.title}
             </h3>
           </div>
-          <span className="text-[11px] text-indigo-400 font-mono block mt-0.5">
+          <span className="text-xs text-indigo-600 font-mono block mt-0.5">
             /e/{event.slug}
           </span>
 
           {/* Metadata */}
-          <div className="mt-3 space-y-1.5 text-xs text-slate-300">
+          <div className="mt-3 space-y-1.5 text-xs text-slate-600">
             <div className="flex items-center gap-2">
               <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               <span className="truncate">
-                {event.date} {event.time && `· ${event.time}`}
+                {event.date || "-"} {event.time ? `• ${event.time}` : ""}
               </span>
             </div>
+
             {event.location && (
               <div className="flex items-center gap-2">
                 <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -110,66 +108,41 @@ export function EventCard({
           </div>
         </div>
 
-        {/* Stats & Actions Footer */}
-        <div className="pt-3 border-t border-white/5 space-y-3">
-          {/* Attendees Summary */}
-          <div className="flex items-center justify-between text-xs">
-            <div className="flex items-center gap-1.5 text-slate-300">
-              <Users className="w-3.5 h-3.5 text-slate-400" />
-              <span>
-                <strong>{event.total_registered || 0}</strong> terdaftar
-                <span className="text-slate-500 mx-1">·</span>
-                <span className="text-emerald-400 font-medium">
-                  {event.total_checked_in || 0} hadir
-                </span>
-              </span>
-            </div>
-            {event.capacity > 0 && (
-              <span className="text-[11px] text-slate-400">
-                Maks: {event.capacity}
-              </span>
-            )}
+        {/* Bottom Actions Bar */}
+        <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-1.5 text-slate-700 font-medium">
+            <Users className="w-3.5 h-3.5 text-slate-400" />
+            <span>{event.participant_count || 0} Tamu</span>
           </div>
 
-          {/* Action Row */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onSelect}
-              className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
-                isSelected
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "bg-white/[0.04] text-slate-300 hover:bg-white/[0.08] hover:text-white"
-              }`}
-            >
-              <span>{isSelected ? "Sedang Dipilih" : "Buka Acara"}</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
-            </button>
-
+          <div className="flex items-center gap-1.5">
             <button
               onClick={handleCopy}
-              className="btn-secondary py-1.5 px-2.5 text-xs shrink-0"
-              title="Salin Link Pendaftaran Tamu"
+              className="btn-secondary text-[11px] py-1 px-2.5"
+              title="Salin link tamu"
             >
               {copied ? (
-                <span className="flex items-center gap-1 text-emerald-400">
-                  <Check className="w-3.5 h-3.5" /> Tersalin
-                </span>
+                <>
+                  <Check className="w-3 h-3 text-emerald-600" />
+                  <span className="text-emerald-700">Tersalin</span>
+                </>
               ) : (
-                <span className="flex items-center gap-1">
-                  <Copy className="w-3.5 h-3.5" /> Link
-                </span>
+                <>
+                  <Copy className="w-3 h-3 text-slate-400" />
+                  <span>Salin Link</span>
+                </>
               )}
             </button>
 
             <a
-              href={`/e/${event.slug}`}
+              href={guestUrl}
               target="_blank"
               rel="noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="btn-secondary py-1.5 px-2.5 text-xs shrink-0"
-              title="Buka Form Tamu Langsung"
+              className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors"
+              title="Buka form pendaftaran"
             >
-              <ExternalLink className="w-3.5 h-3.5" />
+              <ArrowUpRight className="w-3.5 h-3.5" />
             </a>
           </div>
         </div>

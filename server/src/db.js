@@ -80,22 +80,6 @@ export function initDatabase() {
     console.log("✅ Seeded default admin: fadhli@gmail.com");
   }
 
-  // Seed default event if not exists
-  const existingEvent = db.prepare("SELECT id FROM events WHERE slug = ?").get("grand-opening");
-  if (!existingEvent) {
-    db.prepare(`
-      INSERT INTO events (title, slug, description, location, date, time, capacity, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      "Grand Opening",
-      "grand-opening",
-      "Selamat datang di acara Grand Opening! Daftarkan dirimu dan dapatkan e-ticket QR resmi untuk hadir.",
-      "Grand Ballroom, Lantai 3, Jakarta Pusat",
-      "2026-10-15",
-      "09:00 - 17:00 WIB",
-      500,
-      "ACTIVE"
-    );
-    console.log("✅ Seeded default event: Grand Opening (/e/grand-opening)");
-  }
+  // Note: No dummy events or participants are seeded by default.
+  // Admins create their own real events and receive real guest registrations.
 }

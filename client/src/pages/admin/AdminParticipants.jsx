@@ -1,39 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { api } from "../../api";
 import { QRCodeSVG } from "qrcode.react";
-import {
-  Search,
-  Download,
-  CheckCircle,
-  Clock,
-  MessageSquare,
-  Copy,
-  Check,
-  UserCheck,
-  UserX,
-  X,
-  ExternalLink,
-  ChevronLeft,
-  ChevronRight,
-  Filter,
-  ArrowUpDown,
-  Mail
-} from "lucide-react";
 
 export function AdminParticipants({ eventId }) {
   const [participants, setParticipants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [sortBy, setSortBy] = useState("newest"); // newest | oldest | name
+  const [sortBy, setSortBy] = useState("newest");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 15;
 
-  // Selected participant for detail modal
   const [selectedParticipant, setSelectedParticipant] = useState(null);
   const [togglingId, setTogglingId] = useState(null);
-  const [copiedField, setCopiedField] = useState(null);
-  const [feedbackToast, setFeedbackToast] = useState(null);
+  const [toastMsg, setToastMsg] = useState(null);
 
   useEffect(() => {
     loadParticipants();
@@ -41,15 +21,19 @@ export function AdminParticipants({ eventId }) {
   }, [eventId, statusFilter]);
 
   const showToast = (msg) => {
-    setFeedbackToast(msg);
-    setTimeout(() => setFeedbackToast(null), 2500);
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(null), 2500);
   };
 
   const loadParticipants = async () => {
     setLoading(true);
     try {
-      const res = await api.getParticipants(eventId, { search, status: statusFilter });
-      setParticipants(res.participants || []);
+      if (eventId) {
+        const res = await api.getParticipants(eventId, { search, status: statusFilter });
+        setParticipants(res.participants || []);
+      } else {
+        setParticipants([]);
+      }
     } catch (err) {
       console.error("Failed to load participants:", err);
     } finally {
@@ -84,449 +68,409 @@ export function AdminParticipants({ eventId }) {
   };
 
   const handleExport = () => {
+    if (!eventId) return;
     const url = api.getExportUrl(eventId);
     window.open(url, "_blank");
     showToast("Mengunduh data CSV peserta...");
   };
 
-  const handleCopyText = (text, field, e) => {
-    if (e) e.stopPropagation();
-    navigator.clipboard.writeText(text);
-    setCopiedField(field);
-    showToast(`${field} tersalin!`);
-    setTimeout(() => setCopiedField(null), 1800);
-  };
-
   // Sort participants client-side
   const sortedParticipants = [...participants].sort((a, b) => {
     if (sortBy === "name") {
-      return (a.name || "").localeCompare(b.name || "");
-    } else if (sortBy === "oldest") {
-      return a.id - b.id;
-    } else {
-      return b.id - a.id;
+      return a.name.localeCompare(b.name);
     }
+    if (sortBy === "oldest") {
+      return new Date(a.created_at) - new Date(b.created_at);
+    }
+    return new Date(b.created_at) - new Date(a.created_at);
   });
 
-  // Pagination slice
-  const totalItems = sortedParticipants.length;
-  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const totalPages = Math.max(1, Math.ceil(sortedParticipants.length / pageSize));
   const paginatedList = sortedParticipants.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
 
   return (
-    <div className="space-y-5">
-      {/* Toast Notification */}
-      {feedbackToast && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 border border-indigo-500/40 text-slate-100 text-xs px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-150">
-          <CheckCircle className="w-4 h-4 text-emerald-400" />
-          <span>{feedbackToast}</span>
+    <div>
+      {/* Toast alert */}
+      {toastMsg && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: "24px",
+            right: "24px",
+            zIndex: 100,
+            background: "var(--t-base)",
+            color: "var(--t-inverse)",
+            padding: "10px 18px",
+            borderRadius: "8px",
+            fontSize: "13px",
+            boxShadow: "var(--shadow-lg)",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px"
+          }}
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--success)" strokeWidth="2">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          <span>{toastMsg}</span>
         </div>
       )}
 
-      {/* Top Action Bar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        {/* Search */}
-        <form onSubmit={handleSearchSubmit} className="flex-1 max-w-md flex gap-2">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Cari nama, tiket, kontak, instansi..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="input-field pl-9 text-xs py-2"
-            />
-          </div>
-          <button type="submit" className="btn-secondary text-xs px-3">
-            Cari
-          </button>
-        </form>
-
-        {/* Filters, Sorters & Export */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Status Filter Pills */}
-          <div className="flex bg-[#0f1627] p-1 rounded-lg border border-white/5 text-xs">
-            <button
-              onClick={() => setStatusFilter("all")}
-              className={`px-3 py-1 rounded-md transition-all ${
-                statusFilter === "all"
-                  ? "bg-indigo-600 text-white font-semibold"
-                  : "text-slate-400 hover:text-white"
-              }`}
-            >
-              Semua ({participants.length})
-            </button>
-            <button
-              onClick={() => setStatusFilter("checked_in")}
-              className={`px-3 py-1 rounded-md transition-all ${
-                statusFilter === "checked_in"
-                  ? "bg-emerald-600 text-white font-semibold"
-                  : "text-slate-400 hover:text-white"
-              }`}
-            >
-              Hadir
-            </button>
-            <button
-              onClick={() => setStatusFilter("not_checked_in")}
-              className={`px-3 py-1 rounded-md transition-all ${
-                statusFilter === "not_checked_in"
-                  ? "bg-amber-600 text-white font-semibold"
-                  : "text-slate-400 hover:text-white"
-              }`}
-            >
-              Belum
-            </button>
-          </div>
-
-          {/* Sort Dropdown */}
-          <div className="flex items-center gap-1.5 bg-[#0f1627] px-2.5 py-1 rounded-lg border border-white/5 text-xs text-slate-300">
-            <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="bg-transparent border-none text-slate-200 text-xs focus:outline-none cursor-pointer"
-            >
-              <option value="newest" className="bg-slate-900">Terbaru</option>
-              <option value="oldest" className="bg-slate-900">Terlama</option>
-              <option value="name" className="bg-slate-900">Nama (A-Z)</option>
-            </select>
-          </div>
-
-          {/* CSV Export */}
-          <button
-            onClick={handleExport}
-            className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5"
-            title="Export CSV Peserta"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Export CSV</span>
+      {/* Adminator Hero Header */}
+      <section className="hero">
+        <div className="hero-text">
+          <span className="eyebrow">Manajemen · Kehadiran</span>
+          <h1 className="hero-title">Daftar Peserta</h1>
+          <p className="hero-sub">
+            Total <strong>{participants.length}</strong> peserta terdaftar untuk acara ini. Pantau status kehadiran dan ekspor laporan.
+          </p>
+        </div>
+        <div className="hero-actions">
+          <button onClick={handleExport} className="btn btn--ghost" disabled={!eventId || participants.length === 0}>
+            <svg viewBox="0 0 24 24">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <path d="M7 10l5 5 5-5" />
+              <path d="M12 15V3" />
+            </svg>
+            <span>Export CSV</span>
           </button>
         </div>
-      </div>
+      </section>
 
-      {/* Main Table Card */}
-      <div className="card-pro overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="attendee-table">
-            <thead>
-              <tr>
-                <th className="w-10 text-center">#</th>
-                <th>Peserta</th>
-                <th>Nomor Tiket</th>
-                <th>Instansi</th>
-                <th>Kontak</th>
-                <th>Status</th>
-                <th>Waktu Check-in</th>
-                <th className="text-center">Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                [1, 2, 3, 4, 5].map((i) => (
-                  <tr key={i}>
-                    <td colSpan="8" className="py-4 px-6">
-                      <div className="h-6 skeleton w-full" />
+      {/* Adminator DataTable Section */}
+      <div className="grid">
+        <section className="col-12 card">
+          {/* Data Toolbar */}
+          <div className="data-toolbar">
+            <div className="data-toolbar-left">
+              <form onSubmit={handleSearchSubmit} className="input-icon" style={{ flex: 1, maxWidth: "340px" }}>
+                <span className="ico">
+                  <svg viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="m21 21-4.3-4.3" />
+                  </svg>
+                </span>
+                <input
+                  className="input"
+                  type="search"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Cari nama, WA, email, tiket..."
+                />
+              </form>
+            </div>
+
+            <div className="data-toolbar-right">
+              <select
+                className="select"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                style={{ width: "auto", fontSize: "12px" }}
+              >
+                <option value="all">Semua Status</option>
+                <option value="checked_in">Sudah Hadir</option>
+                <option value="not_checked_in">Belum Hadir</option>
+              </select>
+
+              <select
+                className="select"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                style={{ width: "auto", fontSize: "12px" }}
+              >
+                <option value="newest">Terbaru</option>
+                <option value="oldest">Terlama</option>
+                <option value="name">Nama A-Z</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Table Container */}
+          <div style={{ overflowX: "auto", margin: "0 -22px" }}>
+            <table className="data-table" style={{ margin: "0 22px", minWidth: "900px" }}>
+              <thead>
+                <tr>
+                  <th>Peserta</th>
+                  <th>Nomor WhatsApp</th>
+                  <th>Instansi / Perusahaan</th>
+                  <th>Status</th>
+                  <th>ID Tiket</th>
+                  <th>Waktu Daftar</th>
+                  <th style={{ textAlign: "right" }}>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan="7" style={{ textAlign: "center", padding: "40px 0", color: "var(--t-light)" }}>
+                      Memuat data peserta...
                     </td>
                   </tr>
-                ))
-              ) : paginatedList.length === 0 ? (
-                <tr>
-                  <td colSpan="8" className="text-center py-14 text-slate-400 text-xs space-y-2">
-                    <p className="font-semibold text-slate-300 text-sm">
-                      {search ? "Tidak ditemukan peserta yang sesuai." : "Belum ada peserta yang mendaftar pada acara ini."}
-                    </p>
-                    <p className="text-slate-500">
-                      Bagikan link formulir registrasi kepada calon tamu untuk mulai menerima pendaftaran.
-                    </p>
-                  </td>
-                </tr>
-              ) : (
-                paginatedList.map((p, idx) => {
-                  const itemIndex = (currentPage - 1) * pageSize + idx + 1;
-                  const initials = p.name
-                    ? p.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .slice(0, 2)
-                        .join("")
-                        .toUpperCase()
-                    : "P";
-
-                  return (
-                    <tr
-                      key={p.id}
-                      onClick={() => setSelectedParticipant(p)}
-                      className="cursor-pointer group"
-                    >
-                      <td className="text-center text-slate-500 font-mono text-xs">
-                        {itemIndex}
-                      </td>
-
-                      {/* Participant & Avatar */}
-                      <td>
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-slate-800 border border-white/10 text-indigo-300 font-bold text-xs flex items-center justify-center shrink-0 group-hover:border-indigo-500/40 transition-colors">
-                            {initials}
-                          </div>
-                          <div className="min-w-0">
-                            <span className="font-semibold text-white text-xs block group-hover:text-indigo-300 transition-colors truncate">
-                              {p.name}
-                            </span>
-                            <span className="text-[11px] text-slate-400 block truncate">
-                              {p.email}
-                            </span>
-                          </div>
+                ) : paginatedList.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" style={{ textAlign: "center", padding: "48px 0" }}>
+                      <div style={{ maxWidth: "340px", margin: "0 auto", color: "var(--t-muted)" }}>
+                        <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--t-base)", marginBottom: "4px" }}>
+                          Belum Ada Data Peserta
                         </div>
-                      </td>
+                        <p style={{ fontSize: "12px", margin: 0, lineHeight: 1.5 }}>
+                          {search || statusFilter !== "all"
+                            ? "Tidak ada peserta yang cocok dengan kriteria filter Anda."
+                            : "Peserta yang mendaftar melalui form publik akan langsung muncul di sini."}
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedList.map((p) => {
+                    const isChecked = Boolean(p.checked_in);
+                    const isToggling = togglingId === p.id;
+                    const initials = p.name
+                      ? p.name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .slice(0, 2)
+                          .join("")
+                          .toUpperCase()
+                      : "P";
 
-                      {/* Ticket Code */}
-                      <td>
-                        <button
-                          onClick={(e) => handleCopyText(p.ticket_code, "Tiket", e)}
-                          className="font-mono text-xs font-semibold bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 px-2 py-0.5 rounded border border-indigo-500/25 flex items-center gap-1 transition-colors"
-                          title="Klik untuk menyalin nomor tiket"
-                        >
-                          <span>{p.ticket_code}</span>
-                          <Copy className="w-2.5 h-2.5 opacity-60" />
-                        </button>
-                      </td>
+                    return (
+                      <tr
+                        key={p.id}
+                        className={`data-row ${isChecked ? "is-selected" : ""}`}
+                        onClick={() => setSelectedParticipant(p)}
+                        style={{ cursor: "pointer" }}
+                      >
+                        {/* Attendee Name & Email */}
+                        <td>
+                          <div className="data-cell-user">
+                            <div className="av" style={{ background: "linear-gradient(135deg, var(--primary), var(--purple))" }}>
+                              {initials}
+                            </div>
+                            <div className="data-cell-user-meta">
+                              <div className="data-cell-user-name" style={{ fontWeight: 600 }}>
+                                {p.name}
+                              </div>
+                              <div className="data-cell-user-email">
+                                {p.email || "-"}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
 
-                      {/* Organization */}
-                      <td className="text-slate-300 text-xs truncate max-w-[160px]">
-                        {p.organization || "-"}
-                      </td>
+                        {/* WhatsApp */}
+                        <td style={{ color: "var(--t-base)" }}>
+                          {p.whatsapp || "-"}
+                        </td>
 
-                      {/* Contact / WhatsApp */}
-                      <td>
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs text-slate-300">
-                            {p.whatsapp}
+                        {/* Organization */}
+                        <td style={{ color: "var(--t-muted)" }}>
+                          {p.organization || "-"}
+                        </td>
+
+                        {/* Status Badge */}
+                        <td>
+                          {isChecked ? (
+                            <span className="badge success dot">Hadir</span>
+                          ) : (
+                            <span className="badge dot" style={{ color: "var(--t-light)" }}>
+                              Terdaftar
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Ticket Code */}
+                        <td>
+                          <span
+                            className="data-cell-mono"
+                            style={{
+                              fontSize: "11px",
+                              padding: "2px 6px",
+                              borderRadius: "4px",
+                              background: "var(--bg-muted)",
+                              border: "1px solid var(--border-soft)",
+                              fontWeight: 600
+                            }}
+                          >
+                            {p.ticket_code}
                           </span>
-                          {p.whatsapp && (
+                        </td>
+
+                        {/* Date Registered */}
+                        <td>
+                          <span className="data-cell-mono" style={{ fontSize: "11px" }}>
+                            {p.created_at
+                              ? new Date(p.created_at).toLocaleDateString("id-ID", {
+                                  day: "numeric",
+                                  month: "short",
+                                  hour: "2-digit",
+                                  minute: "2-digit"
+                                })
+                              : "-"}
+                          </span>
+                        </td>
+
+                        {/* Actions */}
+                        <td style={{ textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
+                          <div style={{ display: "inline-flex", gap: "6px", alignItems: "center" }}>
+                            <button
+                              onClick={(e) => handleToggle(p.id, e)}
+                              disabled={isToggling}
+                              className={`btn btn--sm ${isChecked ? "btn--soft-warning" : "btn--primary"}`}
+                              style={{ fontSize: "11px", padding: "4px 10px" }}
+                            >
+                              {isToggling ? "..." : isChecked ? "Batal Hadir" : "Tandai Hadir"}
+                            </button>
+
                             <a
-                              href={`https://wa.me/${p.whatsapp.replace(/\D/g, "")}`}
+                              href={`/t/${p.ticket_code}`}
                               target="_blank"
                               rel="noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="text-emerald-400 hover:text-emerald-300 p-1 rounded hover:bg-emerald-500/10 transition-colors"
-                              title="Chat via WhatsApp"
+                              className="btn btn--sm btn--ghost"
+                              style={{ padding: "4px 8px" }}
+                              title="Lihat Tiket"
                             >
-                              <MessageSquare className="w-3.5 h-3.5" />
+                              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                <circle cx="12" cy="12" r="3" />
+                              </svg>
                             </a>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Status */}
-                      <td>
-                        {p.checked_in ? (
-                          <span className="badge badge-success text-[10px]">
-                            <CheckCircle className="w-3 h-3" /> Hadir
-                          </span>
-                        ) : (
-                          <span className="badge badge-warning text-[10px]">
-                            <Clock className="w-3 h-3" /> Belum
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Check-in time */}
-                      <td className="text-slate-400 text-xs font-mono">
-                        {p.checked_in_at ? p.checked_in_at.substring(11, 16) : "-"}
-                      </td>
-
-                      {/* Toggle Action */}
-                      <td className="text-center">
-                        <button
-                          onClick={(e) => handleToggle(p.id, e)}
-                          disabled={togglingId === p.id}
-                          className={p.checked_in ? "btn-outline-danger" : "btn-outline-success"}
-                          title={p.checked_in ? "Batalkan Check-in" : "Tandai Hadir Manual"}
-                        >
-                          {p.checked_in ? (
-                            <>
-                              <UserX className="w-3 h-3" />
-                              <span>Batal</span>
-                            </>
-                          ) : (
-                            <>
-                              <UserCheck className="w-3 h-3" />
-                              <span>Hadir</span>
-                            </>
-                          )}
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination Footer */}
-        {totalPages > 1 && (
-          <div className="p-3.5 border-t border-white/5 flex items-center justify-between text-xs text-slate-400 bg-[#0e1424]">
-            <span>
-              Menampilkan {Math.min((currentPage - 1) * pageSize + 1, totalItems)} -{" "}
-              {Math.min(currentPage * pageSize, totalItems)} dari {totalItems} peserta
-            </span>
-
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="btn-secondary py-1 px-2.5 text-xs disabled:opacity-40"
-              >
-                <ChevronLeft className="w-3.5 h-3.5" />
-              </button>
-              <span className="px-2 font-mono font-medium text-slate-300">
-                {currentPage} / {totalPages}
-              </span>
-              <button
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="btn-secondary py-1 px-2.5 text-xs disabled:opacity-40"
-              >
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
-        )}
-      </div>
 
-      {/* Participant Detail Drawer / Modal */}
-      {selectedParticipant && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="card-pro max-w-md w-full p-6 space-y-5 border border-white/20 bg-[#131b2e] shadow-2xl animate-in fade-in zoom-in-95 duration-150">
-            {/* Header */}
-            <div className="flex items-start justify-between border-b border-white/5 pb-3">
-              <div>
-                <h3 className="text-base font-bold text-white">Detail Peserta</h3>
-                <span className="text-xs text-slate-400">Informasi registrasi & status kehadiran</span>
-              </div>
-              <button
-                onClick={() => setSelectedParticipant(null)}
-                className="text-slate-400 hover:text-white p-1"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Attendee QR Preview & Code */}
-            <div className="p-4 bg-slate-950/60 rounded-xl border border-white/5 text-center flex flex-col items-center">
-              <div className="p-2.5 bg-white rounded-lg shadow-md mb-2">
-                <QRCodeSVG
-                  value={selectedParticipant.ticket_code}
-                  size={120}
-                  level="H"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-sm font-bold text-indigo-400">
-                  {selectedParticipant.ticket_code}
+          {/* Data Footer / Pagination */}
+          {!loading && paginatedList.length > 0 && (
+            <div className="data-foot">
+              <div className="data-foot-info">
+                <span>
+                  Menampilkan <strong>{(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, participants.length)}</strong> dari <strong>{participants.length}</strong> peserta
                 </span>
+              </div>
+              <div className="pager">
                 <button
-                  onClick={(e) => handleCopyText(selectedParticipant.ticket_code, "Nomor Tiket", e)}
-                  className="p-1 text-slate-400 hover:text-white"
-                  title="Salin Nomor Tiket"
+                  className="pager-btn"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  aria-label="Previous"
                 >
-                  <Copy className="w-3.5 h-3.5" />
+                  <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></svg>
+                </button>
+                <button className="pager-btn is-active">{currentPage}</button>
+                <button
+                  className="pager-btn"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  aria-label="Next"
+                >
+                  <svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></svg>
                 </button>
               </div>
             </div>
+          )}
+        </section>
+      </div>
 
-            {/* Information Grid */}
-            <div className="space-y-2.5 text-xs">
-              <div className="flex justify-between py-1.5 border-b border-white/5">
-                <span className="text-slate-400">Nama Lengkap</span>
-                <strong className="text-white text-right">{selectedParticipant.name}</strong>
-              </div>
+      {/* Participant Detail Modal (Adminator Style) */}
+      {selectedParticipant && (
+        <div
+          onClick={() => setSelectedParticipant(null)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.5)",
+            backdropFilter: "blur(2px)",
+            zIndex: 100,
+            display: "grid",
+            placeItems: "center",
+            padding: "16px"
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="modal-demo"
+            style={{ width: "100%", maxWidth: "520px" }}
+          >
+            <div className="modal-head">
+              <div className="modal-title">Detail Peserta & Tiket</div>
+              <button
+                onClick={() => setSelectedParticipant(null)}
+                style={{ color: "var(--t-light)", padding: "4px", cursor: "pointer" }}
+              >
+                ✕
+              </button>
+            </div>
 
-              <div className="flex justify-between py-1.5 border-b border-white/5">
-                <span className="text-slate-400">Instansi / Organisasi</span>
-                <span className="text-slate-200 text-right">{selectedParticipant.organization || "-"}</span>
-              </div>
-
-              <div className="flex justify-between py-1.5 border-b border-white/5">
-                <span className="text-slate-400">Nomor WhatsApp</span>
-                <div className="flex items-center gap-1.5">
-                  <span className="font-mono text-slate-200">{selectedParticipant.whatsapp}</span>
-                  {selectedParticipant.whatsapp && (
-                    <a
-                      href={`https://wa.me/${selectedParticipant.whatsapp.replace(/\D/g, "")}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-emerald-400 hover:text-emerald-300"
-                    >
-                      <MessageSquare className="w-3.5 h-3.5" />
-                    </a>
-                  )}
+            <div className="modal-body" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "16px", padding: "12px", background: "var(--bg-muted)", borderRadius: "10px" }}>
+                <div style={{ padding: "8px", background: "#fff", borderRadius: "8px", border: "1px solid var(--border)", shrink: 0 }}>
+                  <QRCodeSVG value={selectedParticipant.ticket_code} size={90} level="H" />
+                </div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontSize: "16px", fontWeight: 700, color: "var(--t-base)" }}>
+                    {selectedParticipant.name}
+                  </div>
+                  <div style={{ fontSize: "11px", fontFamily: "JetBrains Mono, monospace", color: "var(--primary)", fontWeight: 600, marginTop: "2px" }}>
+                    {selectedParticipant.ticket_code}
+                  </div>
+                  <div style={{ marginTop: "6px" }}>
+                    {selectedParticipant.checked_in ? (
+                      <span className="badge success dot">Sudah Hadir (Checked In)</span>
+                    ) : (
+                      <span className="badge dot" style={{ color: "var(--t-light)" }}>Belum Hadir</span>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              <div className="flex justify-between py-1.5 border-b border-white/5">
-                <span className="text-slate-400">Alamat Email</span>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-slate-200">{selectedParticipant.email}</span>
-                  <button
-                    onClick={(e) => handleCopyText(selectedParticipant.email, "Email", e)}
-                    className="text-slate-400 hover:text-white"
-                  >
-                    <Copy className="w-3 h-3" />
-                  </button>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", fontSize: "13px" }}>
+                <div>
+                  <span style={{ fontSize: "11px", color: "var(--t-light)", display: "block" }}>WhatsApp</span>
+                  <strong style={{ color: "var(--t-base)" }}>{selectedParticipant.whatsapp || "-"}</strong>
                 </div>
-              </div>
-
-              <div className="flex justify-between py-1.5 border-b border-white/5">
-                <span className="text-slate-400">Status Kehadiran</span>
-                {selectedParticipant.checked_in ? (
-                  <span className="badge badge-success text-[10px]">
-                    <CheckCircle className="w-3 h-3" /> Sudah Hadir ({selectedParticipant.checked_in_at?.substring(11, 16)})
-                  </span>
-                ) : (
-                  <span className="badge badge-warning text-[10px]">
-                    <Clock className="w-3 h-3" /> Belum Hadir
-                  </span>
-                )}
+                <div>
+                  <span style={{ fontSize: "11px", color: "var(--t-light)", display: "block" }}>Email</span>
+                  <strong style={{ color: "var(--t-base)", wordBreak: "break-all" }}>{selectedParticipant.email || "-"}</strong>
+                </div>
+                <div>
+                  <span style={{ fontSize: "11px", color: "var(--t-light)", display: "block" }}>Instansi / Perusahaan</span>
+                  <strong style={{ color: "var(--t-base)" }}>{selectedParticipant.organization || "-"}</strong>
+                </div>
+                <div>
+                  <span style={{ fontSize: "11px", color: "var(--t-light)", display: "block" }}>Waktu Terdaftar</span>
+                  <strong style={{ color: "var(--t-base)" }}>
+                    {selectedParticipant.created_at ? new Date(selectedParticipant.created_at).toLocaleString("id-ID") : "-"}
+                  </strong>
+                </div>
               </div>
             </div>
 
-            {/* Actions in Modal */}
-            <div className="flex items-center gap-3 pt-2">
+            <div className="modal-foot">
               <a
                 href={`/t/${selectedParticipant.ticket_code}`}
                 target="_blank"
                 rel="noreferrer"
-                className="btn-secondary text-xs flex-1 py-2 flex items-center justify-center gap-1.5"
+                className="btn btn--ghost"
+                style={{ fontSize: "12px" }}
               >
-                <span>Buka Tiket Tamu</span>
-                <ExternalLink className="w-3.5 h-3.5" />
+                Buka Halaman Tiket
               </a>
-
               <button
-                onClick={() => handleToggle(selectedParticipant.id)}
+                onClick={(e) => handleToggle(selectedParticipant.id, e)}
                 disabled={togglingId === selectedParticipant.id}
-                className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
-                  selectedParticipant.checked_in
-                    ? "bg-rose-500/15 text-rose-300 border border-rose-500/30 hover:bg-rose-500/25"
-                    : "bg-emerald-600 text-white hover:bg-emerald-500 shadow-sm"
-                }`}
+                className={`btn ${selectedParticipant.checked_in ? "btn--warning" : "btn--primary"}`}
+                style={{ fontSize: "12px" }}
               >
-                {selectedParticipant.checked_in ? (
-                  <>
-                    <UserX className="w-3.5 h-3.5" />
-                    <span>Batalkan Check-in</span>
-                  </>
-                ) : (
-                  <>
-                    <UserCheck className="w-3.5 h-3.5" />
-                    <span>Tandai Hadir Sekarang</span>
-                  </>
-                )}
+                {selectedParticipant.checked_in ? "Batalkan Hadir" : "Tandai Hadir Sekarang"}
               </button>
             </div>
           </div>

@@ -8,8 +8,9 @@ client/dist/
 # Database files
 server/data/
 
-# Legacy HiEvents archive
+# Legacy HiEvents archive & Adminator reference
 _legacy_hievents/
+_adminator_ref/
 
 # Environment files
 .env

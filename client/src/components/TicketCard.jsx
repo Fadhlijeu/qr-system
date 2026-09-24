@@ -1,19 +1,5 @@
 import React, { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import {
-  Calendar,
-  Clock,
-  MapPin,
-  Building2,
-  User,
-  Ticket,
-  Download,
-  Printer,
-  Copy,
-  Check,
-  CheckCircle,
-  AlertCircle
-} from "lucide-react";
 
 export function TicketCard({ ticket, event }) {
   const [copied, setCopied] = useState(false);
@@ -52,138 +38,220 @@ export function TicketCard({ ticket, event }) {
     img.src = "data:image/svg+xml;base64," + btoa(svgData);
   };
 
-  return (
-    <div className="w-full max-w-md mx-auto space-y-4">
-      {/* Boarding Pass Ticket */}
-      <div className="ticket-boarding-pass border border-white/10 bg-[#111827] shadow-2xl">
-        {/* 1. Event Header */}
-        <div className="p-5 border-b border-white/10 bg-gradient-to-r from-indigo-950/80 via-slate-900 to-slate-900">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] uppercase font-bold tracking-widest text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
-              Official E-Ticket
-            </span>
-            <Ticket className="w-4 h-4 text-indigo-400 opacity-80" />
-          </div>
-          <h2 className="text-xl font-bold text-white tracking-tight leading-tight">
-            {event?.title || "Acara Resmi"}
-          </h2>
-        </div>
+  const isCheckedIn = Boolean(ticket.checked_in);
 
-        {/* 2. Attendee & Event Metadata */}
-        <div className="p-5 space-y-4 bg-[#111827]">
-          {/* Attendee */}
+  return (
+    <div style={{ maxWidth: "760px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "16px" }}>
+      {/* Ticket Boarding Pass Card */}
+      <div
+        className="card"
+        style={{
+          padding: 0,
+          overflow: "hidden",
+          borderRadius: "16px",
+          border: "1px solid var(--border)",
+          boxShadow: "var(--shadow-card)",
+          background: "var(--bg-card)"
+        }}
+      >
+        {/* Top 4px Solid Accent Line */}
+        <div style={{ height: "4px", background: "linear-gradient(90deg, var(--primary), var(--purple))", width: "100%" }} />
+
+        {/* 1. Header */}
+        <div
+          style={{
+            padding: "24px 32px 18px",
+            borderBottom: "1px solid var(--border-soft)",
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            gap: "16px",
+            flexWrap: "wrap"
+          }}
+        >
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
-              Nama Peserta
+            <span className="eyebrow" style={{ color: "var(--primary)", display: "block", marginBottom: "4px" }}>
+              Official Event Admission Pass
             </span>
-            <div className="text-base font-extrabold text-white">
-              {ticket.name}
-            </div>
-            {ticket.organization && (
-              <div className="text-xs text-indigo-300 font-medium mt-0.5">
-                {ticket.organization}
-              </div>
+            <h2 style={{ fontSize: "24px", fontWeight: 700, margin: 0, color: "var(--t-base)", letterSpacing: "-0.02em" }}>
+              {event?.title || "Grand Opening Event"}
+            </h2>
+          </div>
+
+          <div>
+            {isCheckedIn ? (
+              <span className="badge success dot" style={{ fontSize: "12px", padding: "5px 12px" }}>
+                Sudah Hadir (Checked In)
+              </span>
+            ) : (
+              <span className="badge info dot" style={{ fontSize: "12px", padding: "5px 12px" }}>
+                Tiket Aktif
+              </span>
             )}
           </div>
+        </div>
 
-          {/* Date, Time, Location Grid */}
-          <div className="grid grid-cols-2 gap-3 pt-2 border-t border-white/5 text-xs text-slate-300">
+        {/* 2. Main Body Split: Details + QR Stub */}
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "stretch" }}>
+          {/* Details Section */}
+          <div style={{ flex: 1, minWidth: "300px", padding: "28px 32px", display: "flex", flexDirection: "column", gap: "20px" }}>
             <div>
-              <span className="text-[10px] uppercase font-semibold text-slate-400 block">
-                Tanggal & Waktu
+              <span className="eyebrow" style={{ display: "block", marginBottom: "4px" }}>
+                Nama Tamu Undangan
               </span>
-              <span className="font-semibold text-white block mt-0.5">
-                {event?.date || "-"}
-              </span>
-              {event?.time && (
-                <span className="text-slate-400 text-[11px] block">
-                  {event.time}
-                </span>
+              <div style={{ fontSize: "20px", fontWeight: 700, color: "var(--t-base)" }}>
+                {ticket.name}
+              </div>
+              {ticket.organization && (
+                <div style={{ fontSize: "13px", color: "var(--t-muted)", marginTop: "2px" }}>
+                  {ticket.organization}
+                </div>
               )}
             </div>
 
-            <div>
-              <span className="text-[10px] uppercase font-semibold text-slate-400 block">
-                Lokasi Acara
-              </span>
-              <span className="font-semibold text-white block mt-0.5 truncate">
-                {event?.location || "Diumumkan panitia"}
-              </span>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px 20px" }}>
+              <div>
+                <span className="eyebrow" style={{ display: "block", marginBottom: "4px" }}>
+                  Tanggal & Waktu
+                </span>
+                <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--t-base)" }}>
+                  {event?.date || "-"}
+                </div>
+                {event?.time && (
+                  <div style={{ fontSize: "12px", color: "var(--t-muted)" }}>
+                    {event.time}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <span className="eyebrow" style={{ display: "block", marginBottom: "4px" }}>
+                  Lokasi / Venue
+                </span>
+                <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--t-base)" }}>
+                  {event?.location || "Main Venue"}
+                </div>
+              </div>
+
+              <div>
+                <span className="eyebrow" style={{ display: "block", marginBottom: "4px" }}>
+                  Jenis Tiket
+                </span>
+                <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--t-base)" }}>
+                  General Admission (Undangan)
+                </div>
+              </div>
+
+              <div>
+                <span className="eyebrow" style={{ display: "block", marginBottom: "4px" }}>
+                  Kontak
+                </span>
+                <div style={{ fontSize: "14px", fontWeight: 500, color: "var(--t-base)" }}>
+                  {ticket.whatsapp || ticket.email || "-"}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ borderTop: "1px solid var(--border-soft)", paddingTop: "16px", marginTop: "auto", fontSize: "12px", color: "var(--t-muted)", lineHeight: 1.5 }}>
+              Tunjukkan QR Code pada tiket ini kepada panitia di pintu masuk saat kedatangan untuk validasi otomatis.
             </div>
           </div>
-        </div>
 
-        {/* 3. Perforated Notch Divider */}
-        <div className="ticket-notch-divider" />
+          {/* QR Stub Section */}
+          <div
+            style={{
+              width: "250px",
+              background: "var(--bg-muted)",
+              borderLeft: "1px solid var(--border-soft)",
+              padding: "28px 24px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+              gap: "12px"
+            }}
+          >
+            <div
+              style={{
+                padding: "10px",
+                background: "#ffffff",
+                borderRadius: "12px",
+                border: "1px solid var(--border)",
+                boxShadow: "var(--shadow-sm)"
+              }}
+            >
+              <QRCodeSVG
+                id="ticket-qr-svg"
+                value={ticket.ticket_code}
+                size={140}
+                level="H"
+              />
+            </div>
 
-        {/* 4. Large QR Code Section */}
-        <div className="p-6 text-center bg-slate-950/60 flex flex-col items-center justify-center">
-          <div className="p-3.5 bg-white rounded-2xl shadow-xl inline-block mb-3 border-4 border-slate-900">
-            <QRCodeSVG
-              id="ticket-qr-svg"
-              value={ticket.ticket_code}
-              size={180}
-              level="H"
-              includeMargin={false}
-            />
-          </div>
-
-          <div className="font-mono text-base tracking-widest font-black text-indigo-300 bg-indigo-500/10 px-4 py-1 rounded-full border border-indigo-500/25">
-            {ticket.ticket_code}
-          </div>
-
-          <div className="mt-3">
-            {ticket.checked_in ? (
-              <span className="badge badge-success text-xs font-semibold">
-                <CheckCircle className="w-3.5 h-3.5" /> Sudah Hadir ({ticket.checked_in_at?.substring(11, 16)})
+            <div style={{ width: "100%" }}>
+              <span className="eyebrow" style={{ display: "block", marginBottom: "4px" }}>
+                ID Tiket Resmi
               </span>
-            ) : (
-              <span className="badge badge-warning text-xs font-semibold">
-                ● Siap Digunakan
+              <span
+                className="mono"
+                style={{
+                  fontSize: "10.5px",
+                  fontWeight: 600,
+                  color: "var(--primary)",
+                  padding: "4px 8px",
+                  borderRadius: "6px",
+                  background: "var(--bg-card)",
+                  border: "1px solid var(--border)",
+                  display: "inline-block",
+                  wordBreak: "break-all"
+                }}
+              >
+                {ticket.ticket_code}
               </span>
-            )}
-          </div>
+            </div>
 
-          <p className="text-[11px] text-slate-400 max-w-xs mt-3 leading-relaxed">
-            Pastikan tiket ini disimpan dan ditunjukkan kepada panitia di pintu masuk acara.
-          </p>
+            <p style={{ fontSize: "11px", color: "var(--t-light)", margin: 0 }}>
+              Scan di pintu masuk acara
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* 5. Action Buttons (Excluded from print) */}
-      <div className="no-print flex flex-wrap items-center gap-2 pt-1">
-        <button
-          onClick={handleDownloadQR}
-          className="btn-primary flex-1 text-xs py-2.5"
-          title="Simpan gambar QR Code ke galeri / perangkat"
-        >
-          <Download className="w-3.5 h-3.5" />
-          <span>Simpan QR</span>
-        </button>
+      {/* Action Toolbar */}
+      <div
+        className="card"
+        style={{
+          padding: "14px 20px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: "10px"
+        }}
+      >
+        <div style={{ display: "flex", gap: "8px" }}>
+          <button onClick={handleDownloadQR} className="btn btn--primary">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            <span>Download PNG</span>
+          </button>
 
-        <button
-          onClick={handlePrint}
-          className="btn-secondary flex-1 text-xs py-2.5"
-          title="Cetak tiket atau simpan sebagai dokumen PDF"
-        >
-          <Printer className="w-3.5 h-3.5" />
-          <span>Cetak / PDF</span>
-        </button>
+          <button onClick={handlePrint} className="btn btn--ghost">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="6 9 6 2 18 2 18 9" />
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+              <rect x="6" y="14" width="12" height="8" />
+            </svg>
+            <span>Cetak Tiket</span>
+          </button>
+        </div>
 
-        <button
-          onClick={handleCopyLink}
-          className="btn-secondary text-xs py-2.5 px-3"
-          title="Salin tautan tiket langsung"
-        >
-          {copied ? (
-            <span className="flex items-center gap-1 text-emerald-400">
-              <Check className="w-3.5 h-3.5" /> Tersalin
-            </span>
-          ) : (
-            <span className="flex items-center gap-1">
-              <Copy className="w-3.5 h-3.5" /> Link
-            </span>
-          )}
+        <button onClick={handleCopyLink} className="btn btn--ghost" style={{ fontSize: "12px" }}>
+          {copied ? "Link Tiket Tersalin!" : "Salin Link Tiket"}
         </button>
       </div>
     </div>

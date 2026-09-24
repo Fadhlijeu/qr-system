@@ -93,6 +93,11 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ code, event_id: eventId }),
     }),
+  checkInTicket: (code, eventId) =>
+    request(`/admin/check-in`, {
+      method: "POST",
+      body: JSON.stringify({ code, event_id: eventId }),
+    }),
 
   // Export CSV download link
   getExportUrl: (eventId) => {

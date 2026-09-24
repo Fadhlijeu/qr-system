@@ -1,20 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { api } from "../../api";
-import {
-  Users,
-  UserCheck,
-  Clock,
-  Percent,
-  Copy,
-  Check,
-  ExternalLink,
-  QrCode,
-  ArrowRight,
-  MapPin,
-  Calendar,
-  Building2,
-  CheckCircle2
-} from "lucide-react";
 
 export function AdminDashboard({ eventId, onNavigateToScanner, onNavigateToParticipants }) {
   const [data, setData] = useState(null);
@@ -30,8 +15,12 @@ export function AdminDashboard({ eventId, onNavigateToScanner, onNavigateToParti
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      const res = await api.getDashboard(eventId);
-      setData(res);
+      if (eventId) {
+        const res = await api.getDashboard(eventId);
+        setData(res);
+      } else {
+        setData(null);
+      }
     } catch (err) {
       console.error("Failed to load dashboard:", err);
     } finally {
@@ -54,276 +43,285 @@ export function AdminDashboard({ eventId, onNavigateToScanner, onNavigateToParti
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        {/* Header Skeleton */}
-        <div className="card-pro p-6 space-y-4">
-          <div className="h-6 w-1/3 skeleton" />
-          <div className="h-4 w-1/2 skeleton" />
-        </div>
-        {/* Metric Cards Skeleton */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="card-pro p-5 space-y-3">
-              <div className="h-4 w-20 skeleton" />
-              <div className="h-8 w-14 skeleton" />
-            </div>
-          ))}
-        </div>
-        <div className="card-pro p-6 h-64 skeleton" />
+      <div style={{ padding: "40px 0", textAlign: "center" }}>
+        <div className="spinner lg" style={{ margin: "0 auto 16px" }}></div>
+        <p style={{ color: "var(--t-muted)", fontSize: "13px" }}>
+          Memuat data dashboard...
+        </p>
       </div>
     );
   }
 
+  // If no event is created or selected yet
   if (!data?.event) {
     return (
-      <div className="card-pro p-10 text-center space-y-3">
-        <p className="text-slate-400 text-sm">Acara tidak ditemukan.</p>
-      </div>
+      <section className="card" style={{ padding: "48px 32px", textAlign: "center", maxWidth: "600px", margin: "40px auto" }}>
+        <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "var(--primary-soft)", color: "var(--primary)", display: "grid", placeItems: "center", margin: "0 auto 16px" }}>
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="4" width="18" height="18" rx="2" />
+            <path d="M16 2v4M8 2v4M3 10h18" />
+          </svg>
+        </div>
+        <h2 style={{ fontSize: "20px", fontWeight: 700, margin: "0 0 8px", color: "var(--t-base)" }}>
+          Belum Ada Acara Aktif
+        </h2>
+        <p style={{ color: "var(--t-muted)", fontSize: "13.5px", lineHeight: 1.6, margin: "0 auto 24px", maxWidth: "42ch" }}>
+          Anda belum memilih atau membuat acara. Silakan buat acara baru untuk mendapatkan tautan pendaftaran tamu dan kode tiket QR unik.
+        </p>
+        <button
+          onClick={() => window.location.reload()} // or route to events tab
+          className="btn btn--primary"
+          style={{ margin: "0 auto" }}
+        >
+          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>
+          <span>Buat Acara Pertama</span>
+        </button>
+      </section>
     );
   }
 
   const { metrics, event, recent_checkins = [] } = data;
+  const publicUrl = getPublicEventUrl();
 
   return (
-    <div className="space-y-6">
-      {/* 1. Header Banner */}
-      <div className="card-pro p-5 md:p-6 bg-gradient-to-r from-[#131b2e] via-[#111827] to-[#0f172a] border border-white/5">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2">
-              <span className="badge badge-success text-[10px]">
-                ● {event.status === "ACTIVE" ? "Acara Aktif" : "Selesai"}
-              </span>
-              <span className="text-xs text-indigo-400 font-mono">
-                /e/{event.slug}
-              </span>
-            </div>
-            <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">
-              {event.title}
-            </h1>
-            <div className="flex flex-wrap items-center gap-3 text-xs text-slate-300 pt-1">
-              <div className="flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                <span>{event.date} {event.time && `· ${event.time}`}</span>
-              </div>
-              {event.location && (
-                <div className="flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                  <span>{event.location}</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Action Buttons: Copy Link & Open Event */}
-          <div className="flex items-center gap-2.5 shrink-0">
-            <button
-              onClick={handleCopyLink}
-              className="btn-secondary text-xs px-3.5 py-2 flex items-center gap-1.5"
-            >
-              {copied ? (
-                <>
-                  <Check className="w-4 h-4 text-emerald-400" />
-                  <span className="text-emerald-400 font-semibold">Tersalin!</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-4 h-4" />
-                  <span>Salin Link Pendaftaran</span>
-                </>
-              )}
-            </button>
-
-            <a
-              href={`/e/${event.slug}`}
-              target="_blank"
-              rel="noreferrer"
-              className="btn-primary text-xs px-3.5 py-2 flex items-center gap-1.5"
-            >
-              <span>Buka Form</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
-          </div>
-        </div>
-      </div>
-
-      {/* 2. Four Attendance Metric Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Metric 1: Registered */}
-        <div className="card-pro p-5 space-y-2">
-          <div className="flex items-center justify-between text-slate-400 text-xs">
-            <span className="font-medium">Total Terdaftar</span>
-            <Users className="w-4 h-4 text-indigo-400" />
-          </div>
-          <div className="text-2xl md:text-3xl font-extrabold text-white font-display">
-            {metrics.registered}
-          </div>
-          <p className="text-[11px] text-slate-400">
-            {event.capacity > 0 ? `Kapasitas: ${event.capacity} peserta` : "Kapasitas tanpa batas"}
+    <div>
+      {/* 1. Adminator Hero Header */}
+      <section className="hero">
+        <div className="hero-text">
+          <span className="eyebrow">
+            {event.date} · {event.location || "Lokasi Acara"}
+          </span>
+          <h1 className="hero-title">
+            {event.title} <span className="accent">/e/{event.slug}</span>
+          </h1>
+          <p className="hero-sub">
+            {event.description || "Dashboard operasional acara: pantau registrasi, validasi QR tiket tamu, dan pantau kehadiran secara real-time."}
           </p>
         </div>
 
-        {/* Metric 2: Checked In */}
-        <div className="card-pro p-5 space-y-2 border-emerald-500/20 bg-emerald-950/10">
-          <div className="flex items-center justify-between text-slate-400 text-xs">
-            <span className="font-medium">Sudah Hadir</span>
-            <UserCheck className="w-4 h-4 text-emerald-400" />
-          </div>
-          <div className="text-2xl md:text-3xl font-extrabold text-emerald-400 font-display">
-            {metrics.checked_in}
-          </div>
-          <p className="text-[11px] text-emerald-400/80">
-            Verifikasi tiket sukses
-          </p>
-        </div>
+        <div className="hero-actions">
+          <button onClick={handleCopyLink} className="btn btn--ghost">
+            {copied ? (
+              <>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--success)" strokeWidth="2">
+                  <path d="M20 6L9 17l-5-5" />
+                </svg>
+                <span style={{ color: "var(--success)" }}>Link Tersalin</span>
+              </>
+            ) : (
+              <>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+                <span>Salin Link Tamu</span>
+              </>
+            )}
+          </button>
 
-        {/* Metric 3: Not Checked In */}
-        <div className="card-pro p-5 space-y-2 border-amber-500/20 bg-amber-950/10">
-          <div className="flex items-center justify-between text-slate-400 text-xs">
-            <span className="font-medium">Belum Hadir</span>
-            <Clock className="w-4 h-4 text-amber-400" />
-          </div>
-          <div className="text-2xl md:text-3xl font-extrabold text-amber-400 font-display">
-            {metrics.not_checked_in}
-          </div>
-          <p className="text-[11px] text-amber-400/80">
-            Menunggu kedatangan
-          </p>
-        </div>
+          <a href={publicUrl} target="_blank" rel="noreferrer" className="btn btn--ghost">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3" />
+            </svg>
+            <span>Buka Form</span>
+          </a>
 
-        {/* Metric 4: Attendance Rate */}
-        <div className="card-pro p-5 space-y-2">
-          <div className="flex items-center justify-between text-slate-400 text-xs">
-            <span className="font-medium">Persentase Kehadiran</span>
-            <Percent className="w-4 h-4 text-indigo-400" />
-          </div>
-          <div className="text-2xl md:text-3xl font-extrabold text-white font-display">
-            {metrics.attendance_percentage}%
-          </div>
-          <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-            <div
-              className="bg-indigo-500 h-full rounded-full transition-all duration-500"
-              style={{ width: `${metrics.attendance_percentage}%` }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Quick Action Banner for Scanner */}
-      <div className="card-pro p-4 md:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-indigo-500/30 bg-gradient-to-r from-indigo-950/30 to-slate-900">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
-            <QrCode className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="font-bold text-white text-sm">
-              Verifikasi Tamu dengan QR Scanner
-            </h3>
-            <p className="text-xs text-slate-400">
-              Gunakan kamera ponsel atau laptop untuk check-in instan di pintu masuk acara.
-            </p>
-          </div>
-        </div>
-
-        <button
-          onClick={onNavigateToScanner}
-          className="btn-primary text-xs px-4 py-2 flex items-center gap-2 shrink-0 w-full sm:w-auto"
-        >
-          <span>Mulai Scan QR</span>
-          <ArrowRight className="w-4 h-4" />
-        </button>
-      </div>
-
-      {/* 4. Recent Check-ins List */}
-      <div className="card-pro overflow-hidden">
-        <div className="p-4 border-b border-white/5 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <UserCheck className="w-4 h-4 text-emerald-400" />
-            <h2 className="font-bold text-white text-sm">
-              Kehadiran Terkini
-            </h2>
-          </div>
-          <button
-            onClick={onNavigateToParticipants}
-            className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold transition-colors"
-          >
-            Lihat Semua Peserta →
+          <button onClick={onNavigateToScanner} className="btn btn--primary">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="3" width="7" height="7" />
+              <rect x="14" y="3" width="7" height="7" />
+              <rect x="3" y="14" width="7" height="7" />
+              <rect x="14" y="14" width="7" height="7" />
+            </svg>
+            <span>Mulai Scan QR</span>
           </button>
         </div>
+      </section>
 
-        {recent_checkins.length === 0 ? (
-          <div className="p-10 text-center space-y-3">
-            <div className="w-12 h-12 rounded-full bg-slate-800/80 mx-auto flex items-center justify-center text-slate-500">
-              <Clock className="w-6 h-6" />
+      {/* 2. Adminator KPI Cards Grid */}
+      <section className="kpi-grid" aria-label="Key metrics">
+        {/* Total Registered */}
+        <article className="kpi-card c-primary">
+          <div className="kpi-top">
+            <div className="kpi-identity">
+              <div className="kpi-icon primary">
+                <svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8" />
+                </svg>
+              </div>
+              <div className="kpi-label">Total Terdaftar</div>
             </div>
-            <p className="text-slate-400 text-sm font-medium">
-              Belum ada peserta yang check-in pada acara ini.
-            </p>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              Scan tiket QR peserta menggunakan menu QR Scanner untuk mencatat kehadiran secara langsung.
-            </p>
-            <button
-              onClick={onNavigateToScanner}
-              className="btn-secondary text-xs mt-2"
-            >
-              <QrCode className="w-3.5 h-3.5" /> Buka QR Scanner
+            <span className="kpi-pill info">Tamu</span>
+          </div>
+          <div className="kpi-value">{metrics?.total_registered || 0}</div>
+          <div className="kpi-compare">Total registrasi terkonfirmasi</div>
+        </article>
+
+        {/* Checked In */}
+        <article className="kpi-card c-success">
+          <div className="kpi-top">
+            <div className="kpi-identity">
+              <div className="kpi-icon success">
+                <svg viewBox="0 0 24 24">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                  <polyline points="22 4 12 14.01 9 11.01" />
+                </svg>
+              </div>
+              <div className="kpi-label">Sudah Hadir</div>
+            </div>
+            <span className="kpi-pill up">Checked In</span>
+          </div>
+          <div className="kpi-value">{metrics?.checked_in || 0}</div>
+          <div className="kpi-compare">Telah divalidasi masuk</div>
+        </article>
+
+        {/* Pending Check-in */}
+        <article className="kpi-card c-danger">
+          <div className="kpi-top">
+            <div className="kpi-identity">
+              <div className="kpi-icon danger">
+                <svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+              </div>
+              <div className="kpi-label">Belum Hadir</div>
+            </div>
+            <span className="kpi-pill down">Pending</span>
+          </div>
+          <div className="kpi-value">{metrics?.pending_checkin || 0}</div>
+          <div className="kpi-compare">Menunggu kedatangan</div>
+        </article>
+
+        {/* Attendance Rate */}
+        <article className="kpi-card c-purple">
+          <div className="kpi-top">
+            <div className="kpi-identity">
+              <div className="kpi-icon purple">
+                <svg viewBox="0 0 24 24">
+                  <line x1="19" y1="5" x2="5" y2="19" />
+                  <circle cx="6.5" cy="6.5" r="2.5" />
+                  <circle cx="17.5" cy="17.5" r="2.5" />
+                </svg>
+              </div>
+              <div className="kpi-label">Persentase Kehadiran</div>
+            </div>
+            <span className="kpi-pill flat">{metrics?.attendance_rate || 0}%</span>
+          </div>
+          <div className="kpi-value">
+            {metrics?.attendance_rate || 0}<sup>%</sup>
+          </div>
+          <div className="kpi-compare">Rasio kehadiran tamu</div>
+        </article>
+      </section>
+
+      {/* 3. Bottom Grid: Recent Check-ins & Operations */}
+      <div className="grid">
+        {/* Recent Check-ins */}
+        <section className="col-12 card" style={{ gridColumn: "span 8" }}>
+          <div className="card-head">
+            <div className="card-title-wrap">
+              <span className="eyebrow">Realtime Feed</span>
+              <h2 className="card-title">Kedatangan Terakhir</h2>
+            </div>
+            <button onClick={onNavigateToParticipants} className="card-action">
+              <span>Lihat Semua Peserta</span>
+              <svg viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7" /></svg>
             </button>
           </div>
-        ) : (
-          <div className="divide-y divide-white/5">
-            {recent_checkins.map((item) => {
-              const initials = item.name
-                ? item.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .slice(0, 2)
-                    .join("")
-                    .toUpperCase()
-                : "P";
 
-              return (
-                <div
-                  key={item.id}
-                  className="p-3.5 md:px-5 flex items-center justify-between gap-3 hover:bg-white/[0.02] transition-colors"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-8 h-8 rounded-full bg-indigo-600/15 border border-indigo-500/30 text-indigo-300 font-bold text-xs flex items-center justify-center shrink-0">
-                      {initials}
-                    </div>
-                    <div className="min-w-0">
-                      <span className="font-semibold text-white text-xs block truncate">
-                        {item.name}
-                      </span>
-                      <div className="flex items-center gap-2 text-[11px] text-slate-400">
-                        {item.organization && (
-                          <span className="truncate max-w-[150px]">{item.organization}</span>
-                        )}
-                        {item.email && (
-                          <>
-                            <span className="text-slate-600 hidden sm:inline">·</span>
-                            <span className="truncate hidden sm:inline">{item.email}</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+          {recent_checkins.length === 0 ? (
+            <div style={{ padding: "40px 16px", textAlign: "center", color: "var(--t-light)", fontSize: "13px" }}>
+              Belum ada tamu yang check-in pada acara ini.
+            </div>
+          ) : (
+            <div className="table-scroll">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Peserta</th>
+                    <th>Kode Tiket</th>
+                    <th>Instansi</th>
+                    <th>Status</th>
+                    <th style={{ textAlign: "right" }}>Waktu Hadir</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recent_checkins.map((item, idx) => (
+                    <tr key={idx}>
+                      <td className="cell-name">{item.name}</td>
+                      <td>
+                        <span className="mono" style={{ fontSize: "11px", color: "var(--t-muted)" }}>
+                          {item.ticket_code}
+                        </span>
+                      </td>
+                      <td style={{ color: "var(--t-muted)" }}>{item.organization || "-"}</td>
+                      <td>
+                        <span className="tag t-active">Checked In</span>
+                      </td>
+                      <td style={{ textAlign: "right", color: "var(--t-light)", fontSize: "12px" }}>
+                        {item.checkin_time
+                          ? new Date(item.checkin_time).toLocaleTimeString("id-ID", {
+                              hour: "2-digit",
+                              minute: "2-digit"
+                            })
+                          : "Baru saja"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
 
-                  <div className="flex items-center gap-3 shrink-0 text-right">
-                    <span className="font-mono text-xs font-semibold text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded border border-indigo-500/20">
-                      {item.ticket_code}
-                    </span>
-                    <div className="hidden sm:block text-[11px] text-slate-400 font-mono">
-                      {item.checked_in_at ? item.checked_in_at.substring(11, 16) + " WIB" : "-"}
-                    </div>
-                    <span className="badge badge-success text-[10px]">
-                      <CheckCircle2 className="w-3 h-3" /> Hadir
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
+        {/* Quick Operations Guide */}
+        <section className="col-12 card" style={{ gridColumn: "span 4" }}>
+          <div className="card-head">
+            <div className="card-title-wrap">
+              <span className="eyebrow">Petunjuk</span>
+              <h2 className="card-title">Alur Check-in</h2>
+            </div>
           </div>
-        )}
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "13px" }}>
+            <div style={{ padding: "12px 14px", borderRadius: "8px", background: "var(--bg-muted)", border: "1px solid var(--border-soft)" }}>
+              <strong style={{ color: "var(--t-base)", display: "block", marginBottom: "4px" }}>
+                1. Registrasi Tamu
+              </strong>
+              <p style={{ margin: 0, color: "var(--t-muted)", fontSize: "12px", lineHeight: 1.5 }}>
+                Tamu membuka link registrasi acak, mengisi formulir singkat, dan langsung menerima QR code tiket resmi.
+              </p>
+            </div>
+
+            <div style={{ padding: "12px 14px", borderRadius: "8px", background: "var(--bg-muted)", border: "1px solid var(--border-soft)" }}>
+              <strong style={{ color: "var(--t-base)", display: "block", marginBottom: "4px" }}>
+                2. Pindai di Pintu Masuk
+              </strong>
+              <p style={{ margin: 0, color: "var(--t-muted)", fontSize: "12px", lineHeight: 1.5 }}>
+                Panitia membuka menu <strong>Scan QR</strong> menggunakan kamera smartphone atau laptop untuk memindai tiket tamu.
+              </p>
+            </div>
+
+            <div style={{ padding: "12px 14px", borderRadius: "8px", background: "var(--bg-muted)", border: "1px solid var(--border-soft)" }}>
+              <strong style={{ color: "var(--t-base)", display: "block", marginBottom: "4px" }}>
+                3. Unduh Laporan Kehadiran
+              </strong>
+              <p style={{ margin: 0, color: "var(--t-muted)", fontSize: "12px", lineHeight: 1.5 }}>
+                Export data kehadiran kapan saja ke format CSV dari menu Daftar Peserta.
+              </p>
+            </div>
+
+            <button
+              onClick={onNavigateToScanner}
+              className="btn btn--primary"
+              style={{ width: "100%", justifyContent: "center", marginTop: "8px" }}
+            >
+              Buka Scanner Kamera
+            </button>
+          </div>
+        </section>
       </div>
     </div>
   );
