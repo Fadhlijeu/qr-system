@@ -27,6 +27,12 @@ export function AdminEvents({ onSelectEvent, selectedEventId }) {
   const [errorMessage, setErrorMessage] = useState(null);
   const [copiedId, setCopiedId] = useState(null);
 
+  // Delete state — 2-step confirmation
+  const [deleteTarget, setDeleteTarget] = useState(null); // event object to delete
+  const [deleteStep, setDeleteStep] = useState(1);        // 1 = first confirm, 2 = type name confirm
+  const [deleteInput, setDeleteInput] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
   const [form, setForm] = useState({
     title: "",
     slug: "",
@@ -115,6 +121,43 @@ export function AdminEvents({ onSelectEvent, selectedEventId }) {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  const openDeleteModal = (ev, e) => {
+    e.stopPropagation();
+    setDeleteTarget(ev);
+    setDeleteStep(1);
+    setDeleteInput("");
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteTarget(null);
+    setDeleteStep(1);
+    setDeleteInput("");
+  };
+
+  const handleDeleteProceed = () => {
+    // Step 1 → Step 2: user clicked first "Ya, Hapus" — now ask to type name
+    setDeleteStep(2);
+    setDeleteInput("");
+  };
+
+  const handleDeleteFinal = async () => {
+    if (deleteInput.trim() !== deleteTarget.title.trim()) return;
+    setDeleting(true);
+    try {
+      await api.deleteEvent(deleteTarget.id);
+      // Deselect if we're deleting the currently active event
+      if (deleteTarget.id === selectedEventId) {
+        onSelectEvent(null);
+      }
+      closeDeleteModal();
+      loadEvents();
+    } catch (err) {
+      alert("Gagal menghapus acara: " + (err.message || "Server error"));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div>
       {/* Hero Section */}
@@ -182,19 +225,34 @@ export function AdminEvents({ onSelectEvent, selectedEventId }) {
                     </span>
                     <h3 className="card-title" style={{ fontSize: "16px" }}>{ev.title}</h3>
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleOpenEdit(ev);
-                    }}
-                    className="btn btn--ghost btn--icon btn--sm"
-                    title="Edit Acara"
-                  >
-                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M12 20h9" />
-                      <path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4z" />
-                    </svg>
-                  </button>
+                  <div style={{ display: "flex", gap: "4px", flexShrink: 0 }}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenEdit(ev);
+                      }}
+                      className="btn btn--ghost btn--icon btn--sm"
+                      title="Edit Acara"
+                    >
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M12 20h9" />
+                        <path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4z" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={(e) => openDeleteModal(ev, e)}
+                      className="btn btn--ghost btn--icon btn--sm"
+                      title="Hapus Acara"
+                      style={{ color: "var(--danger)" }}
+                    >
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                        <path d="M10 11v6M14 11v6" />
+                        <path d="M9 6V4h6v2" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
 
                 <div style={{ fontSize: "12px", color: "var(--t-muted)", display: "flex", flexDirection: "column", gap: "6px", marginBottom: "16px" }}>
@@ -404,6 +462,133 @@ export function AdminEvents({ onSelectEvent, selectedEventId }) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Delete Confirmation Modal (2 steps) ── */}
+      {deleteTarget && (
+        <div
+          onClick={closeDeleteModal}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.55)",
+            backdropFilter: "blur(3px)",
+            zIndex: 200,
+            display: "grid",
+            placeItems: "center",
+            padding: "16px",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="modal-demo"
+            style={{ width: "100%", maxWidth: "460px", margin: "auto" }}
+          >
+            {/* Step 1: First confirmation */}
+            {deleteStep === 1 && (
+              <>
+                <div className="modal-head">
+                  <div className="modal-title" style={{ color: "var(--danger)", display: "flex", alignItems: "center", gap: "8px" }}>
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                      <path d="M10 11v6M14 11v6M9 6V4h6v2" />
+                    </svg>
+                    Hapus Acara
+                  </div>
+                  <button onClick={closeDeleteModal} style={{ color: "var(--t-light)", cursor: "pointer", fontSize: "18px" }}>✕</button>
+                </div>
+                <div className="modal-body" style={{ padding: "20px 24px" }}>
+                  <p style={{ fontSize: "14px", color: "var(--t-base)", marginBottom: "12px" }}>
+                    Anda akan menghapus acara:
+                  </p>
+                  <div style={{
+                    padding: "12px 16px",
+                    borderRadius: "8px",
+                    background: "var(--danger-soft, #fef2f2)",
+                    border: "1px solid var(--danger)",
+                    marginBottom: "16px"
+                  }}>
+                    <div style={{ fontWeight: 700, color: "var(--t-base)", fontSize: "14px" }}>{deleteTarget.title}</div>
+                    <div style={{ fontSize: "12px", color: "var(--t-muted)", marginTop: "4px" }}>
+                      {deleteTarget.participant_count || 0} peserta akan ikut terhapus permanen.
+                    </div>
+                  </div>
+                  <div className="alert danger" style={{ margin: 0 }}>
+                    <div className="body" style={{ fontSize: "12.5px" }}>
+                      ⚠ Tindakan ini tidak dapat dibatalkan. Semua data peserta acara ini akan dihapus selamanya.
+                    </div>
+                  </div>
+                </div>
+                <div className="modal-foot">
+                  <button onClick={closeDeleteModal} className="btn btn--ghost">Batalkan</button>
+                  <button onClick={handleDeleteProceed} className="btn btn--primary" style={{ background: "var(--danger)", borderColor: "var(--danger)" }}>
+                    Ya, Hapus Acara
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* Step 2: Type event name to confirm */}
+            {deleteStep === 2 && (
+              <>
+                <div className="modal-head">
+                  <div className="modal-title" style={{ color: "var(--danger)", display: "flex", alignItems: "center", gap: "8px" }}>
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                    Konfirmasi Akhir
+                  </div>
+                  <button onClick={closeDeleteModal} style={{ color: "var(--t-light)", cursor: "pointer", fontSize: "18px" }}>✕</button>
+                </div>
+                <div className="modal-body" style={{ padding: "20px 24px" }}>
+                  <p style={{ fontSize: "13.5px", color: "var(--t-muted)", marginBottom: "16px", lineHeight: 1.6 }}>
+                    Ketik nama acara di bawah untuk memastikan Anda sadar akan tindakan ini:
+                  </p>
+                  <div className="field" style={{ marginBottom: "8px" }}>
+                    <label className="field-label" style={{ fontFamily: "monospace", color: "var(--danger)", fontSize: "12px", marginBottom: "6px", display: "block" }}>
+                      {deleteTarget.title}
+                    </label>
+                    <input
+                      className="input"
+                      type="text"
+                      autoFocus
+                      value={deleteInput}
+                      onChange={(e) => setDeleteInput(e.target.value)}
+                      placeholder="Ketik nama acara persis seperti di atas..."
+                      style={{ borderColor: deleteInput && deleteInput.trim() !== deleteTarget.title.trim() ? "var(--danger)" : undefined }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && deleteInput.trim() === deleteTarget.title.trim()) {
+                          handleDeleteFinal();
+                        }
+                      }}
+                    />
+                    {deleteInput && deleteInput.trim() !== deleteTarget.title.trim() && (
+                      <span style={{ fontSize: "11.5px", color: "var(--danger)", marginTop: "4px", display: "block" }}>
+                        Nama tidak cocok
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="modal-foot">
+                  <button onClick={closeDeleteModal} className="btn btn--ghost">Batalkan</button>
+                  <button
+                    onClick={handleDeleteFinal}
+                    disabled={deleting || deleteInput.trim() !== deleteTarget.title.trim()}
+                    className="btn btn--primary"
+                    style={{
+                      background: "var(--danger)",
+                      borderColor: "var(--danger)",
+                      opacity: deleteInput.trim() !== deleteTarget.title.trim() ? 0.4 : 1
+                    }}
+                  >
+                    {deleting ? "Menghapus..." : "Hapus Permanen"}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

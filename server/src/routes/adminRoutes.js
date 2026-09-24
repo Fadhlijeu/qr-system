@@ -114,6 +114,23 @@ router.put("/events/:id", (req, res) => {
   res.json({ event: updated });
 });
 
+// 4. Delete Event (with all participants cascade)
+router.delete("/events/:id", (req, res) => {
+  const adminId = req.admin?.id;
+  const { id } = req.params;
+
+  const event = db.prepare("SELECT * FROM events WHERE id = ?").get(id);
+  if (!event) {
+    return res.status(404).json({ error: "Acara tidak ditemukan." });
+  }
+
+  // Cascade: delete all participants of this event first
+  db.prepare("DELETE FROM participants WHERE event_id = ?").run(id);
+  db.prepare("DELETE FROM events WHERE id = ?").run(id);
+
+  res.json({ success: true, message: "Acara dan semua pesertanya berhasil dihapus." });
+});
+
 // 4. Dashboard Metrics for an event
 router.get("/events/:id/dashboard", (req, res) => {
   const { id } = req.params;

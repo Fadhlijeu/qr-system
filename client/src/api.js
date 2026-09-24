@@ -73,6 +73,10 @@ export const api = {
       method: "PUT",
       body: JSON.stringify(payload),
     }),
+  deleteEvent: (id) =>
+    request(`/admin/events/${id}`, {
+      method: "DELETE",
+    }),
 
   // Admin Dashboard & Participants
   getDashboard: (eventId) => request(`/admin/events/${eventId}/dashboard`),
