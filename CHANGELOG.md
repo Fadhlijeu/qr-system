@@ -7,6 +7,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased] - 2026-09-24
 
 ### Added
+- **Saved Locations / Reusable Venues (`AdminLocations`)**:
+  - Dedicated venue management screen with empty state ("No Saved Locations"), custom venue creation, interactive map coordinate pin, capacity limits, and Google Maps shortcuts.
+  - Automatic venue caching: any new venue/address entered during event creation is automatically cached to `saved_locations`.
+  - 1-click location quick-picker dropdown in Event Creation/Edit modal to auto-populate venue, address, coordinates, and capacity.
+- **Homepage Design & Organizer Live Customizer (`AdminHomepageDesign`)**:
+  - Live split-view visual editor allowing organizers to brand their public portal:
+    - **Images**: Custom cover image upload and circular logo avatar upload with instant preview.
+    - **Theme & Colors**: Hex color pickers and preset swatches for Accent Color and Background Color, with Light/Dark color mode toggle and automatic contrast warning detection.
+    - **Typography**: Typeface selector (Outfit, Inter, Plus Jakarta Sans, Poppins, Roboto) with live preview phrase.
+    - **Live Real-time Mockup**: Interactive desktop canvas rendering live changes, organizer bio, contact button, and tabbed upcoming/past event cards.
+- **Organizer Settings (`AdminSettings`)**:
+  - Hi.Events-style settings sub-navigation: Basic Information, Event Defaults, Payouts & Fees (Free/Zero-Fee model), Social Links, SEO & Meta tags, Custom Email Ticket Templates, and Analytics Tracking IDs (GA4 & Meta Pixel).
+- **Public Organizer Portal (`/org`)**:
+  - Branded guest-facing homepage displaying the organizer's active events, contact links, and custom styling.
 - **Interactive Map Location Picker (`LocationMapPicker`)**:
   - Keybinds: Left-click for smooth hover and map panning; Right-click (`contextmenu`) for placing/dropping points and auto-reverse-geocoding without accidental pin shifts.
   - Interactive pin-drop and draggable marker anywhere on the map via Leaflet & OpenStreetMap.
@@ -34,6 +48,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Added `_adminator_ref/` and temporary dump files to `.gitignore` to keep repositories clean.
 
 ### Fixed
+- **Dashboard Label Visibility**:
+  - Restored clear and prominent `Dashboard` title and eyebrow labels on both active event views and empty states in `AdminDashboard`, ensuring users always have clear section context.
 - **Map Tile 403 Access Blocked**:
   - Replaced OpenStreetMap standard tile servers (`tile.openstreetmap.org`, which strictly blocks third-party web apps and development servers with HTTP 403 hazard tiles per their Tile Usage Policy) with high-performance **CartoDB Voyager** raster tiles backed by global Fastly CDN. Map now renders with zero rate limits or 403 blocks.
 - **Accidental Modal Dismissal on Outside Click**:

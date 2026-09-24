@@ -69,6 +69,26 @@ function extractTicketCode(raw) {
   return str.toUpperCase();
 }
 
+// Helper to automatically cache reused venues to saved_locations
+function maybeAutoSaveLocation(adminId, locationText, lat, lng, capacity) {
+  if (!locationText || !locationText.trim()) return;
+  const cleanAddr = locationText.trim();
+  const cleanName = cleanAddr.split(",")[0].trim();
+  try {
+    const existing = db.prepare(
+      "SELECT id FROM saved_locations WHERE (admin_id = ? OR admin_id IS NULL) AND (name = ? OR address = ?)"
+    ).get(adminId || 0, cleanName, cleanAddr);
+    if (!existing) {
+      db.prepare(`
+        INSERT INTO saved_locations (admin_id, name, address, lat, lng, capacity)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(adminId || null, cleanName, cleanAddr, lat || null, lng || null, Number(capacity) || 0);
+    }
+  } catch (err) {
+    // Ignore duplicate or concurrent insert errors
+  }
+}
+
 // 1. List events belonging to logged in admin
 router.get("/events", (req, res) => {
   const adminId = req.admin?.id;
@@ -146,6 +166,8 @@ router.post("/events", (req, res) => {
     longitude.value
   );
 
+  maybeAutoSaveLocation(adminId, location, latitude.value, longitude.value, capacity);
+
   const event = db.prepare("SELECT * FROM events WHERE id = ?").get(Number(result.lastInsertRowid));
   res.status(201).json({ event });
 });
@@ -205,6 +227,8 @@ router.put("/events/:id", (req, res) => {
     nextLng,
     id
   );
+
+  maybeAutoSaveLocation(adminId, location !== undefined ? location : event.location, nextLat, nextLng, capacity !== undefined ? capacity : event.capacity);
 
   const updated = db.prepare("SELECT * FROM events WHERE id = ?").get(id);
   res.json({ event: updated });
@@ -450,6 +474,194 @@ router.get("/events/:id/export", (req, res) => {
   res.setHeader("Content-Type", "text/csv; charset=utf-8");
   res.setHeader("Content-Disposition", `attachment; filename="peserta_${event.slug}_${Date.now()}.csv"`);
   res.send(csvContent);
+});
+
+// 10. SAVED LOCATIONS (Reusable Venues)
+router.get("/locations", (req, res) => {
+  const adminId = req.admin?.id;
+  const locations = db.prepare(`
+    SELECT * FROM saved_locations
+    WHERE admin_id = ? OR admin_id IS NULL
+    ORDER BY id DESC
+  `).all(adminId || 0);
+  res.json({ locations });
+});
+
+router.post("/locations", (req, res) => {
+  const adminId = req.admin?.id;
+  const { name, address, lat, lng, capacity } = req.body;
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: "Nama tempat/venue wajib diisi." });
+  }
+
+  const result = db.prepare(`
+    INSERT INTO saved_locations (admin_id, name, address, lat, lng, capacity)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(
+    adminId || null,
+    name.trim(),
+    address?.trim() || name.trim(),
+    Number(lat) || null,
+    Number(lng) || null,
+    Number(capacity) || 0
+  );
+
+  const location = db.prepare("SELECT * FROM saved_locations WHERE id = ?").get(result.lastInsertRowid);
+  res.status(201).json({ location });
+});
+
+router.put("/locations/:id", (req, res) => {
+  const { id } = req.params;
+  const adminId = req.admin?.id;
+  const { name, address, lat, lng, capacity } = req.body;
+
+  const loc = db.prepare("SELECT * FROM saved_locations WHERE id = ? AND (admin_id = ? OR admin_id IS NULL)").get(id, adminId || 0);
+  if (!loc) {
+    return res.status(404).json({ error: "Lokasi tidak ditemukan atau tidak memiliki izin." });
+  }
+
+  db.prepare(`
+    UPDATE saved_locations
+    SET name = ?, address = ?, lat = ?, lng = ?, capacity = ?
+    WHERE id = ?
+  `).run(
+    name?.trim() || loc.name,
+    address !== undefined ? address.trim() : loc.address,
+    lat !== undefined ? Number(lat) : loc.lat,
+    lng !== undefined ? Number(lng) : loc.lng,
+    capacity !== undefined ? Number(capacity) : loc.capacity,
+    id
+  );
+
+  const updated = db.prepare("SELECT * FROM saved_locations WHERE id = ?").get(id);
+  res.json({ location: updated });
+});
+
+router.delete("/locations/:id", (req, res) => {
+  const { id } = req.params;
+  const adminId = req.admin?.id;
+
+  const loc = db.prepare("SELECT * FROM saved_locations WHERE id = ? AND (admin_id = ? OR admin_id IS NULL)").get(id, adminId || 0);
+  if (!loc) {
+    return res.status(404).json({ error: "Lokasi tidak ditemukan atau tidak memiliki izin." });
+  }
+
+  db.prepare("DELETE FROM saved_locations WHERE id = ?").run(id);
+  res.json({ success: true });
+});
+
+// 11. ORGANIZER PROFILE & HOMEPAGE DESIGN
+router.get("/organizer", (req, res) => {
+  const adminId = req.admin?.id;
+  let org = db.prepare("SELECT * FROM organizer_settings WHERE admin_id = ?").get(adminId || 0);
+  const admin = db.prepare("SELECT id, name, email FROM admins WHERE id = ?").get(adminId || 0);
+
+  if (!org) {
+    org = {
+      admin_id: adminId,
+      name: admin?.name || "Organizer",
+      bio: "",
+      logo_url: "",
+      cover_url: "",
+      accent_color: "#8b5cf6",
+      bg_color: "#f8fafc",
+      color_mode: "light",
+      font_family: "Outfit",
+      social_instagram: "",
+      social_website: "",
+      social_linkedin: "",
+      social_twitter: "",
+      email_template: "",
+      seo_title: "",
+      seo_description: "",
+      is_published: 1,
+    };
+  }
+
+  res.json({ organizer: org, admin });
+});
+
+router.put("/organizer", (req, res) => {
+  const adminId = req.admin?.id;
+  const {
+    name,
+    bio,
+    logo_url,
+    cover_url,
+    accent_color,
+    bg_color,
+    color_mode,
+    font_family,
+    social_instagram,
+    social_website,
+    social_linkedin,
+    social_twitter,
+    email_template,
+    seo_title,
+    seo_description,
+    is_published,
+  } = req.body;
+
+  const existing = db.prepare("SELECT admin_id FROM organizer_settings WHERE admin_id = ?").get(adminId || 0);
+  if (existing) {
+    db.prepare(`
+      UPDATE organizer_settings SET
+        name = ?, bio = ?, logo_url = ?, cover_url = ?, accent_color = ?,
+        bg_color = ?, color_mode = ?, font_family = ?, social_instagram = ?,
+        social_website = ?, social_linkedin = ?, social_twitter = ?,
+        email_template = ?, seo_title = ?, seo_description = ?, is_published = ?,
+        updated_at = datetime('now', 'localtime')
+      WHERE admin_id = ?
+    `).run(
+      name || "",
+      bio || "",
+      logo_url || "",
+      cover_url || "",
+      accent_color || "#8b5cf6",
+      bg_color || "#f8fafc",
+      color_mode || "light",
+      font_family || "Outfit",
+      social_instagram || "",
+      social_website || "",
+      social_linkedin || "",
+      social_twitter || "",
+      email_template || "",
+      seo_title || "",
+      seo_description || "",
+      is_published ? 1 : 0,
+      adminId
+    );
+  } else {
+    db.prepare(`
+      INSERT INTO organizer_settings (
+        admin_id, name, bio, logo_url, cover_url, accent_color, bg_color,
+        color_mode, font_family, social_instagram, social_website,
+        social_linkedin, social_twitter, email_template, seo_title,
+        seo_description, is_published
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      adminId,
+      name || "",
+      bio || "",
+      logo_url || "",
+      cover_url || "",
+      accent_color || "#8b5cf6",
+      bg_color || "#f8fafc",
+      color_mode || "light",
+      font_family || "Outfit",
+      social_instagram || "",
+      social_website || "",
+      social_linkedin || "",
+      social_twitter || "",
+      email_template || "",
+      seo_title || "",
+      seo_description || "",
+      is_published ? 1 : 0
+    );
+  }
+
+  const updated = db.prepare("SELECT * FROM organizer_settings WHERE admin_id = ?").get(adminId || 0);
+  res.json({ organizer: updated });
 });
 
 export default router;

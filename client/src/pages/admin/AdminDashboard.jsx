@@ -55,25 +55,34 @@ export function AdminDashboard({ eventId, onNavigateToScanner, onNavigateToParti
   // If no event is created or selected yet
   if (!data?.event) {
     return (
-      <section className="card" style={{ padding: "48px 32px", textAlign: "center", maxWidth: "600px", margin: "40px auto" }}>
-        <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "var(--primary-soft)", color: "var(--primary)", display: "grid", placeItems: "center", margin: "0 auto 16px" }}>
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="3" y="4" width="18" height="18" rx="2" />
-            <path d="M16 2v4M8 2v4M3 10h18" />
-          </svg>
-        </div>
-        <h2 style={{ fontSize: "20px", fontWeight: 700, margin: "0 0 20px", color: "var(--t-base)" }}>
-          Belum Ada Acara Aktif
-        </h2>
-        <button
-          onClick={() => onNavigateToEvents && onNavigateToEvents()}
-          className="btn btn--primary"
-          style={{ margin: "0 auto" }}
-        >
-          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>
-          <span>Buat Acara Baru</span>
-        </button>
-      </section>
+      <div>
+        <section className="hero">
+          <div className="hero-text">
+            <span className="eyebrow" style={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--primary)" }}>Dashboard</span>
+            <h1 className="hero-title">Dashboard Acara</h1>
+          </div>
+        </section>
+
+        <section className="card" style={{ padding: "48px 32px", textAlign: "center", maxWidth: "600px", margin: "20px auto 40px" }}>
+          <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "var(--primary-soft)", color: "var(--primary)", display: "grid", placeItems: "center", margin: "0 auto 16px" }}>
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" />
+              <path d="M16 2v4M8 2v4M3 10h18" />
+            </svg>
+          </div>
+          <h2 style={{ fontSize: "20px", fontWeight: 700, margin: "0 0 20px", color: "var(--t-base)" }}>
+            Belum Ada Acara Aktif
+          </h2>
+          <button
+            onClick={() => onNavigateToEvents && onNavigateToEvents()}
+            className="btn btn--primary"
+            style={{ margin: "0 auto" }}
+          >
+            <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>
+            <span>Buat Acara Baru</span>
+          </button>
+        </section>
+      </div>
     );
   }
 
@@ -128,6 +137,8 @@ export function AdminDashboard({ eventId, onNavigateToScanner, onNavigateToParti
       >
         <div className="hero-text">
           <div className="eyebrow" style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap", marginBottom: "6px" }}>
+            <span style={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--primary)" }}>Dashboard</span>
+            <span>·</span>
             <span>{event.date} {event.time ? `· ${event.time}` : ""}</span>
             {event.location && (
               <>

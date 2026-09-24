@@ -61,6 +61,40 @@ export function initDatabase() {
       name TEXT NOT NULL,
       created_at TEXT DEFAULT (datetime('now', 'localtime'))
     );
+
+    CREATE TABLE IF NOT EXISTS saved_locations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      admin_id INTEGER,
+      name TEXT NOT NULL,
+      address TEXT,
+      lat REAL,
+      lng REAL,
+      capacity INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now', 'localtime')),
+      FOREIGN KEY (admin_id) REFERENCES admins (id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS organizer_settings (
+      admin_id INTEGER PRIMARY KEY,
+      name TEXT,
+      bio TEXT,
+      logo_url TEXT,
+      cover_url TEXT,
+      accent_color TEXT DEFAULT '#8b5cf6',
+      bg_color TEXT DEFAULT '#f8fafc',
+      color_mode TEXT DEFAULT 'light',
+      font_family TEXT DEFAULT 'Outfit',
+      social_instagram TEXT,
+      social_website TEXT,
+      social_linkedin TEXT,
+      social_twitter TEXT,
+      email_template TEXT,
+      seo_title TEXT,
+      seo_description TEXT,
+      is_published INTEGER DEFAULT 1,
+      updated_at TEXT DEFAULT (datetime('now', 'localtime')),
+      FOREIGN KEY (admin_id) REFERENCES admins (id) ON DELETE CASCADE
+    );
   `);
 
   // Safe migration for admin_id in events

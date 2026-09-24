@@ -195,4 +195,28 @@ router.get("/tickets/:ticketCode", (req, res) => {
   });
 });
 
+// Public Organizer Profile & Events
+router.get("/organizer/public", (req, res) => {
+  const org = db.prepare("SELECT * FROM organizer_settings WHERE is_published = 1 ORDER BY updated_at DESC LIMIT 1").get();
+  const events = db.prepare(`
+    SELECT e.id, e.title, e.slug, e.description, e.location, e.date, e.time, e.image_url, e.status
+    FROM events e
+    WHERE e.status = 'ACTIVE'
+    ORDER BY e.date ASC
+  `).all();
+
+  res.json({
+    organizer: org || {
+      name: "Penyelenggara Acara",
+      bio: "Selamat datang di portal acara resmi kami.",
+      accent_color: "#8b5cf6",
+      bg_color: "#f8fafc",
+      color_mode: "light",
+      font_family: "Outfit",
+      is_published: 1,
+    },
+    events,
+  });
+});
+
 export default router;

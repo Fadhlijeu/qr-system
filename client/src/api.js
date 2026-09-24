@@ -115,4 +115,30 @@ export const api = {
     const token = getAuthToken();
     return `${API_BASE}/admin/events/${eventId}/export${token ? `?token=${encodeURIComponent(token)}` : ""}`;
   },
+
+  // Saved Locations (Reusable Venues)
+  getSavedLocations: () => request(`/admin/locations`),
+  createSavedLocation: (payload) =>
+    request(`/admin/locations`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  updateSavedLocation: (id, payload) =>
+    request(`/admin/locations/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    }),
+  deleteSavedLocation: (id) =>
+    request(`/admin/locations/${id}`, {
+      method: "DELETE",
+    }),
+
+  // Organizer Settings & Homepage Design
+  getOrganizerSettings: () => request(`/admin/organizer`),
+  updateOrganizerSettings: (payload) =>
+    request(`/admin/organizer`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    }),
+  getPublicOrganizer: () => request(`/organizer/public`),
 };

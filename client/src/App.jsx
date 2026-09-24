@@ -7,6 +7,10 @@ import { AdminDashboard } from "./pages/admin/AdminDashboard";
 import { AdminParticipants } from "./pages/admin/AdminParticipants";
 import { AdminScanner } from "./pages/admin/AdminScanner";
 import { AdminEvents } from "./pages/admin/AdminEvents";
+import { AdminLocations } from "./pages/admin/AdminLocations";
+import { AdminHomepageDesign } from "./pages/admin/AdminHomepageDesign";
+import { AdminSettings } from "./pages/admin/AdminSettings";
+import { GuestOrganizer } from "./pages/guest/GuestOrganizer";
 import { AdminLayout } from "./components/AdminLayout";
 import { Loader2 } from "lucide-react";
 
@@ -126,11 +130,32 @@ export function App() {
             }}
           />
         )}
+
+        {activeAdminTab === "locations" && (
+          <AdminLocations />
+        )}
+
+        {activeAdminTab === "design" && (
+          <AdminHomepageDesign
+            onNavigateToCreateEvent={() => setActiveAdminTab("events")}
+          />
+        )}
+
+        {activeAdminTab === "settings" && (
+          <AdminSettings
+            onNavigateToLocations={() => setActiveAdminTab("locations")}
+          />
+        )}
       </AdminLayout>
     );
   }
 
-  // 3. Guest Registration: /e/:slug or root /
+  // 3. Public Organizer Homepage: /org or /organizer
+  if (path === "/org" || path.startsWith("/org/") || path === "/organizer" || path.startsWith("/organizer/")) {
+    return <GuestOrganizer />;
+  }
+
+  // 4. Guest Registration: /e/:slug or root /
   // Explicit slug from the URL takes priority; otherwise wait for the first
   // public event to be resolved (no hardcoded placeholder event name).
   let eventSlug = null;

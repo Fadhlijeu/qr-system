@@ -110,9 +110,13 @@ export function AdminEvents({ onSelectEvent, selectedEventId }) {
     setForm((prev) => ({ ...prev, time: buildTimeRange(nextStart, nextEnd, nextTz) }));
   };
 
+  // Reusable saved venues
+  const [savedLocations, setSavedLocations] = useState([]);
+
   useEffect(() => {
     loadEvents();
     api.getConfig().then(setConfig).catch(() => {});
+    api.getSavedLocations().then((res) => setSavedLocations(res.locations || [])).catch(() => {});
   }, []);
 
   const loadEvents = async () => {
@@ -120,6 +124,7 @@ export function AdminEvents({ onSelectEvent, selectedEventId }) {
     try {
       const res = await api.getEvents();
       setEvents(res.events || []);
+      api.getSavedLocations().then((lRes) => setSavedLocations(lRes.locations || [])).catch(() => {});
     } catch (err) {
       console.error("Failed to load events:", err);
     } finally {
@@ -568,7 +573,42 @@ export function AdminEvents({ onSelectEvent, selectedEventId }) {
                 </div>
 
                 <div className="field">
-                  <label className="field-label">Lokasi / Venue</label>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
+                    <label className="field-label" style={{ margin: 0 }}>Lokasi / Venue</label>
+                    {savedLocations.length > 0 && (
+                      <span style={{ fontSize: "11px", color: "var(--t-light)" }}>
+                        {savedLocations.length} venue tersimpan
+                      </span>
+                    )}
+                  </div>
+
+                  {savedLocations.length > 0 && (
+                    <div style={{ marginBottom: "8px" }}>
+                      <select
+                        className="select"
+                        style={{ fontSize: "12px", padding: "6px 10px", background: "var(--bg-muted)", color: "var(--t-base)" }}
+                        onChange={(e) => {
+                          const loc = savedLocations.find((l) => String(l.id) === e.target.value);
+                          if (loc) {
+                            setForm((prev) => ({
+                              ...prev,
+                              location: loc.address || loc.name,
+                              capacity: loc.capacity > 0 ? loc.capacity : prev.capacity,
+                            }));
+                          }
+                        }}
+                        defaultValue=""
+                      >
+                        <option value="" disabled>📍 Pilih dari Lokasi Tersimpan...</option>
+                        {savedLocations.map((loc) => (
+                          <option key={loc.id} value={loc.id}>
+                            {loc.name} {loc.address && loc.address !== loc.name ? `— ${loc.address}` : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
                   <input
                     className="input"
                     type="text"
