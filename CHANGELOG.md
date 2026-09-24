@@ -47,6 +47,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Clicking any event venue/location text immediately opens Google Maps in a new tab.
 
 ### Changed
+- **Sidebar Left-Alignment & Google Outline Icons (`AdminLayout`)**:
+  - Eliminated awkward center-aligned text in sidebar navigation buttons; all menu items are now strictly left-aligned with a neat, unified 12px gap between icon and label.
+  - Replaced all emojis across navigation menus, `AdminSettings` submenus, and `AdminHomepageDesign` controls with authentic Google Material Symbols Outlined SVG icons (`stroke-width="1.8"`).
+  - Enhanced active navigation state with a crisp left accent indicator bar, soft primary tint, and bold typography.
 - **Pure Random Public URLs**:
   - Event registration slugs are now generated as pure unguessable alphanumeric tokens (`/e/evt-[random20]`) with no event title leakage, set to read-only in forms.
 - **Git Hygiene**:

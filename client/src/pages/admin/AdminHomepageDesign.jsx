@@ -156,7 +156,13 @@ export function AdminHomepageDesign({ onNavigateToCreateEvent }) {
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <span style={{ fontSize: "16px" }}>🎨</span>
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c3.31 0 6-2.69 6-6 0-5.52-4.48-10-10-10z" />
+                  <circle cx="8" cy="11.5" r="1.5" />
+                  <circle cx="9.5" cy="7.5" r="1.5" />
+                  <circle cx="14.5" cy="7.5" r="1.5" />
+                  <circle cx="16" cy="11.5" r="1.5" />
+                </svg>
                 <span style={{ fontSize: "13.5px", fontWeight: 700, color: "var(--t-base)" }}>
                   Branding & Visual Tamu
                 </span>
@@ -286,7 +292,11 @@ export function AdminHomepageDesign({ onNavigateToCreateEvent }) {
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <span style={{ fontSize: "16px" }}>🎯</span>
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 3v18" />
+                  <path d="M12 12H3" />
+                </svg>
                 <span style={{ fontSize: "13.5px", fontWeight: 700, color: "var(--t-base)" }}>
                   Tema Warna Tamu
                 </span>
@@ -367,7 +377,17 @@ export function AdminHomepageDesign({ onNavigateToCreateEvent }) {
                         gap: "6px",
                       }}
                     >
-                      <span>☀</span>
+                      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8">
+                        <circle cx="12" cy="12" r="5" />
+                        <line x1="12" y1="1" x2="12" y2="3" />
+                        <line x1="12" y1="21" x2="12" y2="23" />
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                        <line x1="1" y1="12" x2="3" y2="12" />
+                        <line x1="21" y1="12" x2="23" y2="12" />
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                      </svg>
                       <span>Light Mode</span>
                     </button>
 
@@ -389,7 +409,9 @@ export function AdminHomepageDesign({ onNavigateToCreateEvent }) {
                         gap: "6px",
                       }}
                     >
-                      <span>☾</span>
+                      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                      </svg>
                       <span>Dark Mode</span>
                     </button>
                   </div>
@@ -413,7 +435,9 @@ export function AdminHomepageDesign({ onNavigateToCreateEvent }) {
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <span style={{ fontSize: "16px", fontWeight: 700 }}>A</span>
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <path d="M4 7V4h16v3M9 20h6M12 4v16" />
+                </svg>
                 <span style={{ fontSize: "13.5px", fontWeight: 700, color: "var(--t-base)" }}>
                   Tipografi Tamu
                 </span>
@@ -472,7 +496,13 @@ export function AdminHomepageDesign({ onNavigateToCreateEvent }) {
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <span style={{ fontSize: "16px" }}>📋</span>
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                  <line x1="10" y1="9" x2="8" y2="9" />
+                </svg>
                 <span style={{ fontSize: "13.5px", fontWeight: 700, color: "var(--t-base)" }}>
                   Instruksi E-Ticket Tamu
                 </span>
@@ -531,7 +561,7 @@ export function AdminHomepageDesign({ onNavigateToCreateEvent }) {
                 type="button"
                 onClick={() => setPreviewTab("register")}
                 style={{
-                  padding: "5px 12px",
+                  padding: "6px 12px",
                   borderRadius: "6px",
                   border: "none",
                   background: previewTab === "register" ? organizer.accent_color : "rgba(255,255,255,0.15)",
@@ -544,7 +574,10 @@ export function AdminHomepageDesign({ onNavigateToCreateEvent }) {
                   gap: "6px",
                 }}
               >
-                <span>📝</span>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                  <rect x="8" y="2" width="8" height="4" rx="1" />
+                </svg>
                 <span>Form Registrasi Tamu</span>
               </button>
 
@@ -552,7 +585,7 @@ export function AdminHomepageDesign({ onNavigateToCreateEvent }) {
                 type="button"
                 onClick={() => setPreviewTab("ticket")}
                 style={{
-                  padding: "5px 12px",
+                  padding: "6px 12px",
                   borderRadius: "6px",
                   border: "none",
                   background: previewTab === "ticket" ? organizer.accent_color : "rgba(255,255,255,0.15)",
@@ -565,7 +598,11 @@ export function AdminHomepageDesign({ onNavigateToCreateEvent }) {
                   gap: "6px",
                 }}
               >
-                <span>🎟</span>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <rect x="2" y="6" width="20" height="12" rx="2" />
+                  <circle cx="12" cy="12" r="2" />
+                  <path d="M6 12h.01M18 12h.01" />
+                </svg>
                 <span>E-Ticket Tamu</span>
               </button>
             </div>
@@ -669,9 +706,23 @@ export function AdminHomepageDesign({ onNavigateToCreateEvent }) {
                       </div>
                     </div>
 
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", borderTop: isDark ? "1px solid #334155" : "1px solid #f1f5f9", paddingTop: "10px", fontSize: "11.5px", color: isDark ? "#cbd5e1" : "#475569" }}>
-                      <div>📅 {displayDate} · {displayTime}</div>
-                      <div>📍 {displayLocation}</div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "14px", borderTop: isDark ? "1px solid #334155" : "1px solid #f1f5f9", paddingTop: "10px", fontSize: "11.5px", color: isDark ? "#cbd5e1" : "#475569" }}>
+                      <div style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.8">
+                          <rect x="3" y="4" width="18" height="18" rx="2" />
+                          <line x1="16" y1="2" x2="16" y2="6" />
+                          <line x1="8" y1="2" x2="8" y2="6" />
+                          <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                        <span>{displayDate} · {displayTime}</span>
+                      </div>
+                      <div style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.8">
+                          <path d="M12 21.5C7.5 16 5 12.5 5 9a7 7 0 1 1 14 0c0 3.5-2.5 7-7 12.5z" />
+                          <circle cx="12" cy="9" r="2.5" />
+                        </svg>
+                        <span>{displayLocation}</span>
+                      </div>
                     </div>
                   </div>
                 </div>

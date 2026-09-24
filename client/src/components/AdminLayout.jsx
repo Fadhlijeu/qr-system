@@ -21,9 +21,9 @@ export function AdminLayout({
       id: "dashboard",
       label: "Dashboard",
       icon: (
-        <svg viewBox="0 0 24 24">
-          <path d="M3 12 12 3l9 9" />
-          <path d="M5 10v10h14V10" />
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="m3 10.5 9-7 9 7v10.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 20.5z" />
+          <path d="M9 22V12h6v10" />
         </svg>
       )
     },
@@ -31,9 +31,11 @@ export function AdminLayout({
       id: "events",
       label: "Daftar Acara",
       icon: (
-        <svg viewBox="0 0 24 24">
-          <rect x="3" y="4" width="18" height="18" rx="2" />
-          <path d="M16 2v4M8 2v4M3 10h18" />
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2.5" />
+          <line x1="16" y1="2" x2="16" y2="6" />
+          <line x1="8" y1="2" x2="8" y2="6" />
+          <line x1="3" y1="10" x2="21" y2="10" />
         </svg>
       )
     },
@@ -41,9 +43,11 @@ export function AdminLayout({
       id: "participants",
       label: "Daftar Peserta",
       icon: (
-        <svg viewBox="0 0 24 24">
-          <circle cx="12" cy="8" r="4" />
-          <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8" />
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="9" cy="7" r="4" />
+          <path d="M3 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          <path d="M21 21v-2a4 4 0 0 0-3-3.85" />
         </svg>
       )
     },
@@ -51,12 +55,15 @@ export function AdminLayout({
       id: "scanner",
       label: "Scan QR Tamu",
       icon: (
-        <svg viewBox="0 0 24 24">
-          <rect x="3" y="3" width="7" height="7" />
-          <rect x="14" y="3" width="7" height="7" />
-          <rect x="3" y="14" width="7" height="7" />
-          <rect x="14" y="14" width="3" height="3" />
-          <rect x="18" y="18" width="3" height="3" />
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 8V5a2 2 0 0 1 2-2h3" />
+          <path d="M15 3h3a2 2 0 0 1 2 2v3" />
+          <path d="M20 16v3a2 2 0 0 1-2 2h-3" />
+          <path d="M9 21H6a2 2 0 0 1-2-2v-3" />
+          <rect x="7" y="7" width="3.5" height="3.5" rx="0.5" />
+          <rect x="13.5" y="7" width="3.5" height="3.5" rx="0.5" />
+          <rect x="7" y="13.5" width="3.5" height="3.5" rx="0.5" />
+          <rect x="13.5" y="13.5" width="3.5" height="3.5" rx="0.5" />
         </svg>
       )
     },
@@ -64,9 +71,9 @@ export function AdminLayout({
       id: "locations",
       label: "Lokasi Tersimpan",
       icon: (
-        <svg viewBox="0 0 24 24">
-          <path d="M12 21s-7-5.5-7-11a7 7 0 1 1 14 0c0 5.5-7 11-7 11z" />
-          <circle cx="12" cy="10" r="2.5" />
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 21.5C7.5 16 5 12.5 5 9a7 7 0 0 1 14 0c0 3.5-2.5 7-7 12.5z" />
+          <circle cx="12" cy="9" r="2.5" />
         </svg>
       )
     },
@@ -74,8 +81,12 @@ export function AdminLayout({
       id: "design",
       label: "Desain Tampilan Tamu",
       icon: (
-        <svg viewBox="0 0 24 24">
-          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c3.31 0 6-2.69 6-6 0-5.52-4.48-10-10-10z" />
+          <circle cx="8" cy="11.5" r="1.5" />
+          <circle cx="9.5" cy="7.5" r="1.5" />
+          <circle cx="14.5" cy="7.5" r="1.5" />
+          <circle cx="16" cy="11.5" r="1.5" />
         </svg>
       )
     },
@@ -83,7 +94,7 @@ export function AdminLayout({
       id: "settings",
       label: "Pengaturan",
       icon: (
-        <svg viewBox="0 0 24 24">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="3" />
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
         </svg>
@@ -203,8 +214,21 @@ export function AdminLayout({
         )}
 
         {/* Navigation Sections */}
-        <nav className="nav-section">
-          <div className="nav-label">Menu Acara</div>
+        <nav className="nav-section" style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+          <div
+            className="nav-label"
+            style={{
+              fontSize: "10.5px",
+              fontWeight: 700,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: "var(--t-light, #94a3b8)",
+              padding: "6px 12px 6px",
+              textAlign: "left",
+            }}
+          >
+            Menu Acara
+          </div>
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
             return (
@@ -213,9 +237,51 @@ export function AdminLayout({
                 onClick={() => handleNavClick(item.id)}
                 className={`nav-link ${isActive ? "is-active" : ""}`}
                 type="button"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "flex-start",
+                  textAlign: "left",
+                  width: "100%",
+                  padding: "10px 14px",
+                  borderRadius: "10px",
+                  fontSize: "13.5px",
+                  fontWeight: isActive ? 600 : 500,
+                  gap: "12px",
+                  lineHeight: 1.25,
+                  cursor: "pointer",
+                  background: isActive ? "var(--primary-soft, #eff6ff)" : "transparent",
+                  color: isActive ? "var(--primary, #2563eb)" : "var(--t-muted, #475569)",
+                  border: "none",
+                  borderLeft: isActive ? "3.5px solid var(--primary, #2563eb)" : "3.5px solid transparent",
+                  transition: "all 0.16s ease",
+                }}
               >
-                {item.icon}
-                <span>{item.label}</span>
+                <span
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                    width: "20px",
+                    height: "20px",
+                    color: isActive ? "var(--primary, #2563eb)" : "currentColor",
+                  }}
+                >
+                  {item.icon}
+                </span>
+                <span
+                  style={{
+                    textAlign: "left",
+                    flex: 1,
+                    minWidth: 0,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {item.label}
+                </span>
               </button>
             );
           })}
