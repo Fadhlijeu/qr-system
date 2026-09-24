@@ -115,21 +115,30 @@ export function AdminScanner({ eventId, onCheckInComplete }) {
     setIsProcessing(true);
     try {
       const cleanCode = code.trim();
-      const res = await api.checkInTicket(cleanCode);
+      const res = await api.checkInTicket(cleanCode, eventId);
 
-      if (res.status === "ALREADY_CHECKED_IN") {
+      if (res.status === "INVALID" || !res.participant) {
+        playBeep("error");
+        setScanResult({
+          type: "error",
+          title: "Check-in Ditolak",
+          message: res.message || "Tiket tidak terdaftar atau tidak sesuai dengan acara ini.",
+        });
+      } else if (res.status === "ALREADY_CHECKED_IN") {
         playBeep("warning");
         setScanResult({
           type: "warning",
           title: "Sudah Check-In Sebelumnya",
-          message: `Peserta ${res.participant?.name || "ini"} sudah divalidasi hadir pada ${
-            res.participant?.checkin_time
-              ? new Date(res.participant.checkin_time).toLocaleTimeString("id-ID")
-              : "sesi sebelumnya"
-          }.`,
+          message:
+            res.message ||
+            `Peserta ${res.participant?.name || "ini"} sudah divalidasi hadir pada ${
+              res.participant?.checked_in_at
+                ? res.participant.checked_in_at
+                : "sesi sebelumnya"
+            }.`,
           participant: res.participant,
         });
-      } else {
+      } else if (res.status === "SUCCESS" && res.participant) {
         playBeep("success");
         setScanResult({
           type: "success",
@@ -138,30 +147,51 @@ export function AdminScanner({ eventId, onCheckInComplete }) {
           participant: res.participant,
         });
         if (onCheckInComplete) onCheckInComplete();
+      } else {
+        playBeep("error");
+        setScanResult({
+          type: "error",
+          title: "Check-in Ditolak",
+          message: res.message || "Tiket tidak valid.",
+        });
       }
 
       setSessionLogs((prev) => [
         {
           id: Date.now(),
-          type: res.status === "ALREADY_CHECKED_IN" ? "warning" : "success",
-          name: res.participant?.name || cleanCode,
+          type:
+            res.status === "INVALID" || !res.participant
+              ? "error"
+              : res.status === "ALREADY_CHECKED_IN"
+              ? "warning"
+              : "success",
+          name: res.participant?.name || (res.status === "INVALID" ? "Tidak Terdaftar" : cleanCode),
           code: cleanCode,
           time: new Date().toLocaleTimeString("id-ID"),
         },
         ...prev.slice(0, 19),
       ]);
     } catch (err) {
+      console.error("Check-in error:", err);
       playBeep("error");
+      const cleanMsg =
+        err?.message &&
+        !err.message.includes("Cannot read") &&
+        !err.message.includes("undefined") &&
+        !err.message.includes("null")
+          ? err.message
+          : "Tiket tidak terdaftar atau tidak sesuai dengan acara ini.";
+
       setScanResult({
         type: "error",
         title: "Check-in Ditolak",
-        message: err.message || "Kode tiket tidak valid atau tidak terdaftar pada acara ini.",
+        message: cleanMsg,
       });
       setSessionLogs((prev) => [
         {
           id: Date.now(),
           type: "error",
-          name: "Gagal: " + code,
+          name: "Tidak Valid: " + code,
           code: code,
           time: new Date().toLocaleTimeString("id-ID"),
         },

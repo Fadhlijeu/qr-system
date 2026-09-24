@@ -62,19 +62,16 @@ export function AdminDashboard({ eventId, onNavigateToScanner, onNavigateToParti
             <path d="M16 2v4M8 2v4M3 10h18" />
           </svg>
         </div>
-        <h2 style={{ fontSize: "20px", fontWeight: 700, margin: "0 0 8px", color: "var(--t-base)" }}>
+        <h2 style={{ fontSize: "20px", fontWeight: 700, margin: "0 0 20px", color: "var(--t-base)" }}>
           Belum Ada Acara Aktif
         </h2>
-        <p style={{ color: "var(--t-muted)", fontSize: "13.5px", lineHeight: 1.6, margin: "0 auto 24px", maxWidth: "42ch" }}>
-          Anda belum memilih atau membuat acara. Silakan buat acara baru untuk mendapatkan tautan pendaftaran tamu dan kode tiket QR unik.
-        </p>
         <button
           onClick={() => onNavigateToEvents && onNavigateToEvents()}
           className="btn btn--primary"
           style={{ margin: "0 auto" }}
         >
           <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>
-          <span>Buat Acara Pertama</span>
+          <span>Buat Acara Baru</span>
         </button>
       </section>
     );

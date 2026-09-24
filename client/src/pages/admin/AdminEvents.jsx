@@ -250,12 +250,14 @@ export function AdminEvents({ onSelectEvent, selectedEventId }) {
           <span className="eyebrow">Pengaturan · Acara</span>
           <h1 className="hero-title">Manajemen Acara</h1>
         </div>
-        <div className="hero-actions">
-          <button onClick={handleOpenCreate} className="btn btn--primary">
-            <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>
-            <span>Buat Acara Baru</span>
-          </button>
-        </div>
+        {events.length > 0 && (
+          <div className="hero-actions">
+            <button onClick={handleOpenCreate} className="btn btn--primary">
+              <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>
+              <span>Buat Acara Baru</span>
+            </button>
+          </div>
+        )}
       </section>
 
       {/* Events Grid */}
@@ -265,22 +267,19 @@ export function AdminEvents({ onSelectEvent, selectedEventId }) {
           <p style={{ color: "var(--t-muted)", fontSize: "13px" }}>Memuat daftar acara...</p>
         </div>
       ) : events.length === 0 ? (
-        <div className="card" style={{ textAlign: "center", padding: "48px 32px", maxWidth: "560px", margin: "40px auto" }}>
+        <div className="card" style={{ textAlign: "center", padding: "48px 32px", maxWidth: "480px", margin: "40px auto" }}>
           <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "var(--primary-soft)", color: "var(--primary)", display: "grid", placeItems: "center", margin: "0 auto 16px" }}>
             <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="3" y="4" width="18" height="18" rx="2" />
               <path d="M16 2v4M8 2v4M3 10h18" />
             </svg>
           </div>
-          <h3 style={{ fontSize: "18px", fontWeight: 700, margin: "0 0 8px", color: "var(--t-base)" }}>
+          <h3 style={{ fontSize: "18px", fontWeight: 700, margin: "0 0 20px", color: "var(--t-base)" }}>
             Belum Ada Acara Dibuat
           </h3>
-          <p style={{ color: "var(--t-muted)", fontSize: "13px", lineHeight: 1.6, margin: "0 auto 24px", maxWidth: "40ch" }}>
-            Klik tombol di bawah untuk menambahkan acara baru.
-          </p>
           <button onClick={handleOpenCreate} className="btn btn--primary" style={{ margin: "0 auto" }}>
             <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>
-            <span>Buat Acara Sekarang</span>
+            <span>Buat Acara Baru</span>
           </button>
         </div>
       ) : (

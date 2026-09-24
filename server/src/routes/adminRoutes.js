@@ -359,7 +359,7 @@ router.post("/check-in", checkinLimiter, (req, res) => {
     return res.json({
       status: "INVALID",
       code: cleanCode,
-      message: "INVALID QR: Tiket tidak terdaftar atau tidak sesuai dengan acara yang Anda kelola.",
+      message: "Tiket tidak terdaftar atau tidak sesuai dengan acara yang Anda kelola.",
     });
   }
 
@@ -367,7 +367,7 @@ router.post("/check-in", checkinLimiter, (req, res) => {
   if (participant.checked_in === 1) {
     return res.json({
       status: "ALREADY_CHECKED_IN",
-      message: "ALREADY CHECKED IN: Peserta sudah melakukan check-in sebelumnya.",
+      message: "Peserta sudah melakukan check-in sebelumnya.",
       participant: {
         id: participant.id,
         ticket_code: participant.ticket_code,
@@ -391,7 +391,7 @@ router.post("/check-in", checkinLimiter, (req, res) => {
     const fresh = db.prepare("SELECT * FROM participants WHERE id = ?").get(participant.id);
     return res.json({
       status: "ALREADY_CHECKED_IN",
-      message: "ALREADY CHECKED IN: Peserta baru saja check-in di pemindai lain.",
+      message: "Peserta baru saja check-in di pemindai lain.",
       participant: fresh,
     });
   }
@@ -400,7 +400,7 @@ router.post("/check-in", checkinLimiter, (req, res) => {
 
   return res.json({
     status: "SUCCESS",
-    message: "CHECK-IN SUCCESS: Selamat datang!",
+    message: "Selamat datang!",
     participant: {
       id: updated.id,
       ticket_code: updated.ticket_code,

@@ -34,6 +34,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Added `_adminator_ref/` and temporary dump files to `.gitignore` to keep repositories clean.
 
 ### Fixed
+- **Check-in Scanner Exception Handling**:
+  - Resolved `Cannot read properties of undefined (reading 'name')` crash when scanning invalid or unregistered tickets.
+  - Added strict guard branching for `INVALID` ticket responses and sanitized error messages so raw JavaScript runtime exceptions never surface to panitia.
+  - Cleaned server check-in responses by removing technical prefix labels (`INVALID QR:`, `ALREADY CHECKED IN:`, `CHECK-IN SUCCESS:`) in favor of clear Indonesian messaging.
+- **Redundant Event Creation Buttons & Dummy Text**:
+  - Eliminated duplicate `+ Buat Acara Baru` button from the header when no events exist, leaving a single clean call-to-action inside the empty state.
+  - Removed beginner hand-holding dummy text (`Klik tombol di bawah untuk menambahkan acara baru.` and explanatory paragraphs) in both `AdminEvents` and `AdminDashboard`.
 - **Map Search Form Isolation**:
   - Replaced nested `<form>` in `LocationMapPicker` with isolated search controls to prevent accidental submission of the outer event creation form and unwanted redirects to the dashboard.
 - **Dashboard Empty State Navigation**:
