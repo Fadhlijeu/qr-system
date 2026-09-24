@@ -38,6 +38,7 @@ async function request(endpoint, options = {}) {
 }
 
 export const api = {
+  getConfig: () => request(`/config`),
   // Public Guest API
   getPublicEvent: (slug) => request(`/events/${slug}`),
   registerGuest: (slug, payload) =>
@@ -52,6 +53,11 @@ export const api = {
     request(`/auth/login`, {
       method: "POST",
       body: JSON.stringify({ email, password }),
+    }),
+  registerAdmin: (name, email, password) =>
+    request(`/auth/register`, {
+      method: "POST",
+      body: JSON.stringify({ name, email, password }),
     }),
   getMe: () => request(`/auth/me`),
 

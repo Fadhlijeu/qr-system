@@ -21,10 +21,42 @@ app.use(express.json());
 // Initialize Database (WAL mode, tables & initial seeds)
 initDatabase();
 
+// Optional Multi-domain segregation middleware
+app.use((req, res, next) => {
+  const host = (req.get("host") || "").toLowerCase().split(":")[0];
+  const adminDomain = (process.env.ADMIN_DOMAIN || "").toLowerCase().replace(/^https?:\/\//, "").split(":")[0];
+  const guestDomain = (process.env.GUEST_DOMAIN || "").toLowerCase().replace(/^https?:\/\//, "").split(":")[0];
+
+  // If Guest Domain is configured and request comes from Guest Domain, block /admin access
+  if (guestDomain && host === guestDomain && (req.path.startsWith("/admin") || req.path.startsWith("/api/admin"))) {
+    return res.status(404).json({ error: "Halaman tidak ditemukan." });
+  }
+
+  // If Admin Domain is configured and root / is accessed, redirect to /admin
+  if (adminDomain && host === adminDomain && req.path === "/") {
+    return res.redirect("/admin");
+  }
+
+  next();
+});
+
 // API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api", guestRoutes);
 app.use("/api/admin", adminRoutes);
+
+// Config endpoint for client domain resolution
+app.get("/api/config", (req, res) => {
+  const host = req.get("host");
+  const protocol = req.protocol;
+  const currentOrigin = `${protocol}://${host}`;
+
+  res.json({
+    currentOrigin,
+    guestDomain: process.env.GUEST_DOMAIN || currentOrigin,
+    adminDomain: process.env.ADMIN_DOMAIN || currentOrigin,
+  });
+});
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {

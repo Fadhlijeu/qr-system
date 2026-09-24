@@ -60,6 +60,13 @@ export function initDatabase() {
     );
   `);
 
+  // Safe migration for admin_id in events
+  try {
+    db.exec(`ALTER TABLE events ADD COLUMN admin_id INTEGER REFERENCES admins (id) ON DELETE SET NULL;`);
+  } catch (err) {
+    // Column already exists, ignore
+  }
+
   // Seed default admin if not exists
   const existingAdmin = db.prepare("SELECT id FROM admins WHERE email = ?").get("fadhli@gmail.com");
   if (!existingAdmin) {

@@ -19,8 +19,11 @@ export function AdminEvents({ onSelectEvent, selectedEventId }) {
     capacity: 0,
   });
 
+  const [config, setConfig] = useState(null);
+
   useEffect(() => {
     loadEvents();
+    api.getConfig().then(setConfig).catch(() => {});
   }, []);
 
   const loadEvents = async () => {
@@ -33,6 +36,11 @@ export function AdminEvents({ onSelectEvent, selectedEventId }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getGuestUrl = (slug) => {
+    const base = config?.guestDomain || window.location.origin;
+    return `${base}/e/${slug}`;
   };
 
   const handleOpenCreate = () => {
@@ -79,7 +87,7 @@ export function AdminEvents({ onSelectEvent, selectedEventId }) {
   };
 
   const handleCopyLink = (ev) => {
-    const url = `${window.location.origin}/e/${ev.slug}`;
+    const url = getGuestUrl(ev.slug);
     navigator.clipboard.writeText(url);
     setCopiedId(ev.id);
     setTimeout(() => setCopiedId(null), 2000);
@@ -197,10 +205,53 @@ export function AdminEvents({ onSelectEvent, selectedEventId }) {
                   type="text"
                   required
                   value={form.title}
-                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  onChange={(e) => {
+                    const newTitle = e.target.value;
+                    const autoSlug = newTitle
+                      .toLowerCase()
+                      .replace(/[^a-z0-9]+/g, "-")
+                      .replace(/^-+|-+$/g, "");
+                    setForm({
+                      ...form,
+                      title: newTitle,
+                      slug: editingEvent ? form.slug : autoSlug,
+                    });
+                  }}
                   className="input-field text-sm"
                   placeholder="Contoh: Grand Opening Toko Baru"
                 />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="input-label mb-0">Slug / Link Unik Tamu *</label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const rand = "ev-" + Math.random().toString(36).substring(2, 8);
+                      setForm({ ...form, slug: rand });
+                    }}
+                    className="text-[11px] text-indigo-400 hover:text-indigo-300 font-mono"
+                  >
+                    🎲 Buat Acak Unik
+                  </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono text-slate-400 bg-slate-900 px-2 py-2 rounded-lg border border-white/10 shrink-0">
+                    /e/
+                  </span>
+                  <input
+                    type="text"
+                    required
+                    value={form.slug}
+                    onChange={(e) => setForm({ ...form, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") })}
+                    className="input-field text-sm font-mono"
+                    placeholder="link-unik-event"
+                  />
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Tautan tamu: <span className="text-indigo-300 font-mono">{window.location.origin}/e/{form.slug || "link-unik"}</span>
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">

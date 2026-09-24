@@ -6,9 +6,11 @@ export function AdminDashboard({ eventId, onNavigateToScanner, onNavigateToParti
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [config, setConfig] = useState(null);
 
   useEffect(() => {
     loadDashboardData();
+    api.getConfig().then(setConfig).catch(() => {});
   }, [eventId]);
 
   const loadDashboardData = async () => {
@@ -25,7 +27,8 @@ export function AdminDashboard({ eventId, onNavigateToScanner, onNavigateToParti
 
   const getPublicEventUrl = () => {
     if (!data?.event) return "";
-    return `${window.location.origin}/e/${data.event.slug}`;
+    const base = config?.guestDomain || window.location.origin;
+    return `${base}/e/${data.event.slug}`;
   };
 
   const handleCopyLink = () => {

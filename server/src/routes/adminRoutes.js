@@ -20,21 +20,24 @@ function extractTicketCode(raw) {
   return str.toUpperCase();
 }
 
-// 1. List all events
+// 1. List events belonging to logged in admin
 router.get("/events", (req, res) => {
+  const adminId = req.admin?.id;
   const events = db.prepare(`
     SELECT e.*, 
       (SELECT COUNT(*) FROM participants WHERE event_id = e.id) as total_registered,
       (SELECT COUNT(*) FROM participants WHERE event_id = e.id AND checked_in = 1) as total_checked_in
     FROM events e
+    WHERE e.admin_id = ? OR e.admin_id IS NULL
     ORDER BY e.created_at DESC
-  `).all();
+  `).all(adminId || 0);
 
   res.json({ events });
 });
 
 // 2. Create Event
 router.post("/events", (req, res) => {
+  const adminId = req.admin?.id;
   const { title, slug, description, location, date, time, capacity, status } = req.body;
 
   if (!title?.trim()) {
@@ -44,14 +47,14 @@ router.post("/events", (req, res) => {
     return res.status(400).json({ error: "Tanggal acara wajib diisi." });
   }
 
-  // Generate slug if not provided
+  // Generate slug if not provided, or sanitize provided slug
   let cleanSlug = (slug || title)
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-  if (!cleanSlug) cleanSlug = "event-" + Date.now();
+  if (!cleanSlug) cleanSlug = "event-" + Date.now().toString(36);
 
   // Check unique slug
   const existing = db.prepare("SELECT id FROM events WHERE slug = ?").get(cleanSlug);
@@ -60,9 +63,10 @@ router.post("/events", (req, res) => {
   }
 
   const result = db.prepare(`
-    INSERT INTO events (title, slug, description, location, date, time, capacity, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO events (admin_id, title, slug, description, location, date, time, capacity, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
+    adminId || null,
     title.trim(),
     cleanSlug,
     description?.trim() || "",
