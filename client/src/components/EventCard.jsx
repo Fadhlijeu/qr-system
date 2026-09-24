@@ -43,7 +43,7 @@ export function EventCard({
     >
       {/* Top Banner / Cover */}
       <div className="relative h-24 bg-slate-100 p-4 flex items-start justify-between border-b border-slate-200 overflow-hidden">
-        {/* Date Stamp Badge (Hi.Events signature style) */}
+        {/* Date Stamp Badge */
         <div className="relative z-10 w-11 h-13 bg-white border border-slate-200 rounded-lg flex flex-col items-center justify-center text-center shadow-xs">
           <span className="text-[9px] font-bold uppercase text-indigo-600 font-mono tracking-wider">
             {month}

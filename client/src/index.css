@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* Hi.Events Brand Tokens */
+    /* Grand Opening Design Tokens */
     --hi-text: #0f172a;
     --hi-text-muted: #64748b;
     --hi-text-tertiary: #94a3b8;
@@ -51,7 +51,7 @@
   }
 }
 
-/* Hi.Events Clean Card */
+/* Clean Card */
 .card-hi {
   background: #ffffff;
   border: 1px solid var(--hi-color-border);
@@ -65,7 +65,7 @@
   box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
 }
 
-/* Hi.Events Form Inputs */
+/* Clean Form Inputs */
 .input-label {
   display: block;
   font-family: var(--font-body);
@@ -107,7 +107,7 @@
   cursor: not-allowed;
 }
 
-/* Hi.Events Buttons */
+/* UI Action Buttons */
 .btn-primary {
   display: inline-flex;
   align-items: center;
@@ -188,7 +188,7 @@
   background: #4338ca;
 }
 
-/* Badges matching Hi.Events */
+/* Badges */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -231,7 +231,7 @@
   border: 1px solid #c7d2fe;
 }
 
-/* Hi.Events Table Styles */
+/* Table Styles */
 .table-wrapper {
   background: #ffffff;
   border: 1px solid var(--hi-color-border);
@@ -274,7 +274,7 @@
   background: #f8fafc;
 }
 
-/* Custom Scrollbar matching Hi.Events */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
