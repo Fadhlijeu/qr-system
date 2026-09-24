@@ -139,51 +139,78 @@ export function GuestRegister({ slug = null }) {
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             {/* Event Summary Card */}
-            <div className="card" style={{ padding: "28px" }}>
+            <div className="card" style={{ padding: "0", overflow: "hidden", borderRadius: "16px" }}>
               {event?.image_url && (
                 <div
                   style={{
-                    marginBottom: "20px",
-                    borderRadius: "10px",
+                    position: "relative",
+                    width: "100%",
+                    aspectRatio: "21 / 9",
+                    minHeight: "180px",
+                    maxHeight: "320px",
                     overflow: "hidden",
                     background: "var(--bg-muted)",
-                    border: "1px solid var(--border-soft)"
                   }}
                 >
                   <img
                     src={event.image_url}
                     alt={event?.title || "Gambar acara"}
-                    style={{ display: "block", width: "100%", height: "auto", maxHeight: "320px", objectFit: "cover" }}
+                    style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                  <div
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      background: "linear-gradient(to top, var(--bg-card, #ffffff) 0%, rgba(255,255,255,0.8) 25%, transparent 75%)",
+                      pointerEvents: "none",
+                    }}
                   />
                 </div>
               )}
 
-              <h1 style={{ fontSize: "26px", fontWeight: 700, margin: "0 0 8px", color: "var(--t-base)", letterSpacing: "-0.02em" }}>
-                {event?.title}
-              </h1>
+              <div style={{ padding: "24px 28px", marginTop: event?.image_url ? "-24px" : "0", position: "relative", zIndex: 1 }}>
+                <h1 style={{ fontSize: "26px", fontWeight: 700, margin: "0 0 8px", color: "var(--t-base)", letterSpacing: "-0.02em" }}>
+                  {event?.title}
+                </h1>
 
-              {event?.description && (
-                <p style={{ color: "var(--t-muted)", fontSize: "13.5px", lineHeight: 1.6, margin: "0 0 16px" }}>
-                  {event.description}
-                </p>
-              )}
+                {event?.description && (
+                  <p style={{ color: "var(--t-muted)", fontSize: "13.5px", lineHeight: 1.6, margin: "0 0 16px" }}>
+                    {event.description}
+                  </p>
+                )}
 
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", borderTop: "1px solid var(--border-soft)", paddingTop: "14px", fontSize: "12.5px", color: "var(--t-base)" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
-                  </svg>
-                  <span>{event?.date} {event?.time ? `· ${event.time}` : ""}</span>
-                </div>
-
-                {event?.location && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", borderTop: "1px solid var(--border-soft)", paddingTop: "14px", fontSize: "12.5px", color: "var(--t-base)" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+                      <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
                     </svg>
-                    <span>{event.location}</span>
+                    <span>{event?.date} {event?.time ? `· ${event.time}` : ""}</span>
                   </div>
-                )}
+
+                  {event?.location && (
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      title="Buka lokasi di Google Maps"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        color: "var(--primary)",
+                        fontWeight: 600,
+                        textDecoration: "underline",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+                      </svg>
+                      <span>{event.location}</span>
+                      <span style={{ fontSize: "11px" }}>↗</span>
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
 

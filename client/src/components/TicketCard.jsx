@@ -57,13 +57,31 @@ export function TicketCard({ ticket, event }) {
         {/* Top 4px Solid Accent Line */}
         <div style={{ height: "4px", background: "linear-gradient(90deg, var(--primary), var(--purple))", width: "100%" }} />
 
-        {/* Optional Event Image */}
+        {/* Optional Event Image with full ratio & gradient fadeout */}
         {event?.image_url && (
-          <div style={{ background: "var(--bg-muted)", borderBottom: "1px solid var(--border-soft)" }}>
+          <div
+            style={{
+              position: "relative",
+              width: "100%",
+              aspectRatio: "21 / 8",
+              minHeight: "160px",
+              maxHeight: "260px",
+              background: "var(--bg-muted)",
+              overflow: "hidden",
+            }}
+          >
             <img
               src={event.image_url}
               alt={event?.title || "Gambar acara"}
-              style={{ display: "block", width: "100%", height: "auto", maxHeight: "240px", objectFit: "cover" }}
+              style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                background: "linear-gradient(to top, var(--bg-card, #ffffff) 0%, rgba(255,255,255,0.8) 25%, transparent 75%)",
+                pointerEvents: "none",
+              }}
             />
           </div>
         )}
@@ -77,7 +95,10 @@ export function TicketCard({ ticket, event }) {
             alignItems: "flex-start",
             justifyContent: "space-between",
             gap: "16px",
-            flexWrap: "wrap"
+            flexWrap: "wrap",
+            marginTop: event?.image_url ? "-20px" : "0",
+            position: "relative",
+            zIndex: 1,
           }}
         >
           <div>
@@ -139,9 +160,29 @@ export function TicketCard({ ticket, event }) {
                 <span className="eyebrow" style={{ display: "block", marginBottom: "4px" }}>
                   Lokasi / Venue
                 </span>
-                <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--t-base)" }}>
-                  {event?.location || "-"}
-                </div>
+                {event?.location ? (
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    title="Buka lokasi di Google Maps"
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      color: "var(--primary)",
+                      textDecoration: "underline",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <span>{event.location}</span>
+                    <span style={{ fontSize: "11px" }}>↗</span>
+                  </a>
+                ) : (
+                  <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--t-base)" }}>-</div>
+                )}
               </div>
 
               <div>

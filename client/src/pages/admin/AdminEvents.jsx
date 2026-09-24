@@ -303,16 +303,34 @@ export function AdminEvents({ onSelectEvent, selectedEventId }) {
                 onClick={() => onSelectEvent(ev.id)}
               >
                 {ev.image_url && (
-                  <div style={{ marginBottom: "16px", overflow: "hidden", background: "var(--bg-muted)", border: "1px solid var(--border-soft)", borderRadius: "10px" }}>
+                  <div
+                    style={{
+                      position: "relative",
+                      margin: "-20px -20px 14px -20px",
+                      overflow: "hidden",
+                      borderTopLeftRadius: "10px",
+                      borderTopRightRadius: "10px",
+                      aspectRatio: "16 / 9",
+                      background: "var(--bg-muted)",
+                    }}
+                  >
                     <img
                       src={ev.image_url}
                       alt={ev.title}
-                      style={{ display: "block", width: "100%", height: "140px", objectFit: "cover" }}
+                      style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }}
+                    />
+                    <div
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        background: "linear-gradient(to top, var(--bg-card, #ffffff) 0%, rgba(255,255,255,0.75) 20%, transparent 70%)",
+                        pointerEvents: "none",
+                      }}
                     />
                   </div>
                 )}
 
-                <div className="card-head" style={{ marginBottom: "12px" }}>
+                <div className="card-head" style={{ marginBottom: "12px", position: "relative", zIndex: 1 }}>
                   <div className="card-title-wrap">
                     <span className="eyebrow" style={{ color: isSelected ? "var(--primary)" : "var(--t-light)" }}>
                       {isSelected ? "● Acara Aktif" : "Acara"}
@@ -358,12 +376,27 @@ export function AdminEvents({ onSelectEvent, selectedEventId }) {
                   </div>
 
                   {ev.location && (
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}`, "_blank");
+                      }}
+                      title="Buka lokasi di Google Maps"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        cursor: "pointer",
+                        color: "var(--primary)",
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
+                      onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}
+                    >
                       <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
                       </svg>
                       <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {ev.location}
+                        {ev.location} ↗
                       </span>
                     </div>
                   )}

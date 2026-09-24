@@ -8,19 +8,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 - **Interactive Map Location Picker (`LocationMapPicker`)**:
+  - Keybinds: Left-click for smooth hover and map panning; Right-click (`contextmenu`) for placing/dropping points and auto-reverse-geocoding without accidental pin shifts.
   - Interactive pin-drop and draggable marker anywhere on the map via Leaflet & OpenStreetMap.
   - Real-time reverse geocoding: automatically resolves clicked/dragged coordinates into readable venue/street names and populates the location form input.
   - Built-in location search bar with instant autocomplete suggestions for buildings, hotels, roads, and cities.
   - Pre-input support: opening the map with an existing address pre-centers the map and places the pin automatically.
   - Device GPS auto-detection button ("GPS Saya") for rapid current location pinning.
   - Quick action to open selected coordinates or address directly in Google Maps.
+  - Cleaned UI: eliminated beginner dummy badge text.
 - **Enhanced Event Time Picker**:
   - Start time and end time inputs with timezone selectors (`WIB`, `WITA`, `WIT`).
 - **Two-Step Event Deletion Confirmation**:
   - Step 1: Warning modal summarizing impacted guests.
   - Step 2: Verification modal requiring panitia to type the exact event title before permanent deletion.
-- **Image Display Layout**:
-  - Event banner images placed prominently above the event card header and dashboard hero.
+- **Full-Ratio Event Banner Display & Fadeout**:
+  - Full-ratio widescreen display image across Dashboard hero, Event cards, Guest Registration, and E-Ticket cards.
+  - Gradient fadeout overlay seamlessly melts banner bottom directly into the event title.
+- **Interactive Venue Locations**:
+  - Clicking any event venue/location text immediately opens Google Maps in a new tab.
 
 ### Changed
 - **Pure Random Public URLs**:
@@ -29,6 +34,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Added `_adminator_ref/` and temporary dump files to `.gitignore` to keep repositories clean.
 
 ### Fixed
+- **Map Search Form Isolation**:
+  - Replaced nested `<form>` in `LocationMapPicker` with isolated search controls to prevent accidental submission of the outer event creation form and unwanted redirects to the dashboard.
 - **Dashboard Empty State Navigation**:
   - Clicking "Buat Acara Pertama" in `AdminDashboard` now directly navigates to the Events tab instead of triggering a full page reload.
 - **Delete Modal Layout**:

@@ -82,8 +82,13 @@ export function LocationMapPicker({ initialValue, onSelectLocation, onClose }) {
       maxZoom: 19,
     }).addTo(map);
 
-    // Initial click handler on map: drops/moves pin and reverse geocodes
-    map.on("click", (e) => {
+    // Left-click: pans/navigates map
+    // Right-click: picks/drops the pin and reverse geocodes
+    map.on("contextmenu", (e) => {
+      if (e.originalEvent) {
+        e.originalEvent.preventDefault();
+        e.originalEvent.stopPropagation();
+      }
       const { lat, lng } = e.latlng;
       placeMarker(lat, lng, true);
     });
@@ -206,7 +211,8 @@ export function LocationMapPicker({ initialValue, onSelectLocation, onClose }) {
 
   // Live search for suggestions
   const handleSearch = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
+    if (e && e.stopPropagation) e.stopPropagation();
     if (!searchQuery.trim()) return;
 
     setSearching(true);
@@ -223,7 +229,7 @@ export function LocationMapPicker({ initialValue, onSelectLocation, onClose }) {
       const data = await res.json();
       setSearchResults(data || []);
       if (!data || data.length === 0) {
-        setErrorMsg("Tidak ada tempat yang cocok. Coba kata kunci lain atau klik langsung di peta.");
+        setErrorMsg("Tidak ada tempat yang cocok. Coba kata kunci lain.");
       }
     } catch (err) {
       setErrorMsg("Gagal melakukan pencarian lokasi.");
@@ -339,8 +345,8 @@ export function LocationMapPicker({ initialValue, onSelectLocation, onClose }) {
           </div>
         </div>
 
-        {/* Search Input Form */}
-        <form onSubmit={handleSearch} style={{ position: "relative", display: "flex", gap: "6px" }}>
+        {/* Search Input Bar (div, not form, to prevent parent form submission) */}
+        <div style={{ position: "relative", display: "flex", gap: "6px" }}>
           <div style={{ position: "relative", flex: 1 }}>
             <input
               type="text"
@@ -349,11 +355,20 @@ export function LocationMapPicker({ initialValue, onSelectLocation, onClose }) {
               placeholder="Cari gedung, hotel, jalan, atau daerah..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleSearch(e);
+                }
+              }}
             />
             {searchQuery && (
               <button
                 type="button"
-                onClick={() => {
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   setSearchQuery("");
                   setSearchResults([]);
                 }}
@@ -374,14 +389,15 @@ export function LocationMapPicker({ initialValue, onSelectLocation, onClose }) {
             )}
           </div>
           <button
-            type="submit"
+            type="button"
+            onClick={handleSearch}
             disabled={searching}
             className="btn btn--primary btn--sm"
             style={{ fontSize: "12px", padding: "0 14px", flexShrink: 0 }}
           >
             {searching ? "Mencari..." : "Cari"}
           </button>
-        </form>
+        </div>
 
         {/* Search Results Dropdown */}
         {searchResults.length > 0 && (
@@ -429,30 +445,11 @@ export function LocationMapPicker({ initialValue, onSelectLocation, onClose }) {
       </div>
 
       {/* Interactive Map Box */}
-      <div style={{ position: "relative", width: "100%", height: "290px" }}>
+      <div
+        onContextMenu={(e) => e.preventDefault()}
+        style={{ position: "relative", width: "100%", height: "290px" }}
+      >
         <div ref={mapContainerRef} style={{ width: "100%", height: "100%" }} />
-
-        {/* Tip Badge on Map */}
-        <div
-          style={{
-            position: "absolute",
-            bottom: "10px",
-            left: "10px",
-            zIndex: 1000,
-            background: "rgba(15, 23, 42, 0.82)",
-            backdropFilter: "blur(4px)",
-            color: "#ffffff",
-            padding: "5px 10px",
-            borderRadius: "6px",
-            fontSize: "11px",
-            pointerEvents: "none",
-            display: "flex",
-            alignItems: "center",
-            gap: "5px",
-          }}
-        >
-          <span>💡 Klik di mana saja pada peta atau geser pin untuk menentukan titik.</span>
-        </div>
       </div>
 
       {/* Bottom Bar: Detected Address & Actions */}
@@ -468,7 +465,7 @@ export function LocationMapPicker({ initialValue, onSelectLocation, onClose }) {
       >
         <div>
           <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--t-muted)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "4px" }}>
-            {reverseLoading ? "Mendeteksi Alamat Titik..." : "Alamat Terdeteksi:"}
+            {reverseLoading ? "Mendeteksi Alamat..." : "Alamat Terdeteksi:"}
           </div>
           <div
             style={{
@@ -482,12 +479,12 @@ export function LocationMapPicker({ initialValue, onSelectLocation, onClose }) {
             {reverseLoading ? (
               <span style={{ color: "var(--primary)", display: "flex", alignItems: "center", gap: "6px" }}>
                 <span className="spinner sm" style={{ width: "12px", height: "12px", borderWidth: "2px" }}></span>
-                Mengambil nama tempat dari koordinat...
+                Mengambil nama tempat...
               </span>
             ) : selectedAddress ? (
               selectedAddress
             ) : (
-              "Belum ada titik yang dipilih. Silakan klik pada peta."
+              "-"
             )}
           </div>
           {coordinates && (

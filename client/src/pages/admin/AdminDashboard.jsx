@@ -85,32 +85,80 @@ export function AdminDashboard({ eventId, onNavigateToScanner, onNavigateToParti
 
   return (
     <div>
-      {/* Event display image (above event text) */}
-      {event.image_url && (
+      {/* Event display image with full ratio & gradient fadeout touching the event name */}
+      {event.image_url ? (
         <div
           style={{
+            position: "relative",
             width: "100%",
-            marginBottom: "18px",
-            borderRadius: "12px",
+            borderRadius: "14px 14px 0 0",
             overflow: "hidden",
             background: "var(--bg-muted)",
-            border: "1px solid var(--border-soft)"
+            aspectRatio: "21 / 8",
+            minHeight: "180px",
+            maxHeight: "320px",
+            marginBottom: "-48px",
+            zIndex: 1,
+            border: "1px solid var(--border-soft)",
+            borderBottom: "none",
           }}
         >
           <img
             src={event.image_url}
             alt={event.title}
-            style={{ display: "block", width: "100%", height: "auto", maxHeight: "300px", objectFit: "cover" }}
+            style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "linear-gradient(to top, var(--bg-body, #f8fafc) 0%, rgba(248, 250, 252, 0.88) 30%, transparent 75%)",
+              pointerEvents: "none",
+            }}
           />
         </div>
-      )}
+      ) : null}
 
       {/* 1. Hero Header */}
-      <section className="hero">
+      <section
+        className="hero"
+        style={{
+          position: "relative",
+          zIndex: 2,
+          background: event.image_url ? "transparent" : undefined,
+          paddingTop: event.image_url ? "12px" : undefined,
+        }}
+      >
         <div className="hero-text">
-          <span className="eyebrow">
-            {event.date} {event.time ? `· ${event.time}` : ""} {event.location ? `· ${event.location}` : ""}
-          </span>
+          <div className="eyebrow" style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap", marginBottom: "6px" }}>
+            <span>{event.date} {event.time ? `· ${event.time}` : ""}</span>
+            {event.location && (
+              <>
+                <span>·</span>
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  title="Buka lokasi di Google Maps"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    color: "var(--primary)",
+                    fontWeight: 600,
+                    textDecoration: "underline",
+                    cursor: "pointer",
+                  }}
+                >
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+                  </svg>
+                  <span>{event.location}</span>
+                  <span style={{ fontSize: "11px" }}>↗</span>
+                </a>
+              </>
+            )}
+          </div>
           <h1 className="hero-title">
             {event.title}
           </h1>
