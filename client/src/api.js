@@ -54,10 +54,16 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ email, password }),
     }),
-  registerAdmin: (name, email, password) =>
-    request(`/auth/register`, {
+  // OTP-based registration
+  requestOtp: (name, email, password) =>
+    request(`/auth/register/request-otp`, {
       method: "POST",
       body: JSON.stringify({ name, email, password }),
+    }),
+  verifyOtp: (email, otp) =>
+    request(`/auth/register/verify-otp`, {
+      method: "POST",
+      body: JSON.stringify({ email, otp }),
     }),
   getMe: () => request(`/auth/me`),
 

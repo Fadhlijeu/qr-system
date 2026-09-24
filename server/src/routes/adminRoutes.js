@@ -116,7 +116,6 @@ router.put("/events/:id", (req, res) => {
 
 // 4. Delete Event (with all participants cascade)
 router.delete("/events/:id", (req, res) => {
-  const adminId = req.admin?.id;
   const { id } = req.params;
 
   const event = db.prepare("SELECT * FROM events WHERE id = ?").get(id);

@@ -516,10 +516,16 @@ export function AdminEvents({ onSelectEvent, selectedEventId }) {
                       {deleteTarget.participant_count || 0} peserta akan ikut terhapus permanen.
                     </div>
                   </div>
-                  <div className="alert danger" style={{ margin: 0 }}>
-                    <div className="body" style={{ fontSize: "12.5px" }}>
+                  <div style={{
+                    background: "#fef2f2",
+                    border: "1px solid var(--danger)",
+                    borderRadius: "8px",
+                    padding: "10px 14px",
+                    margin: 0
+                  }}>
+                    <p style={{ fontSize: "12.5px", color: "#7f1d1d", margin: 0, lineHeight: 1.6 }}>
                       ⚠ Tindakan ini tidak dapat dibatalkan. Semua data peserta acara ini akan dihapus selamanya.
-                    </div>
+                    </p>
                   </div>
                 </div>
                 <div className="modal-foot">
