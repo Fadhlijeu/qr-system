@@ -125,7 +125,7 @@ export function AdminParticipants({ eventId }) {
           <span className="eyebrow">Manajemen · Kehadiran</span>
           <h1 className="hero-title">Daftar Peserta</h1>
           <p className="hero-sub">
-            Total <strong>{participants.length}</strong> peserta terdaftar untuk acara ini. Pantau status kehadiran dan ekspor laporan.
+            Total <strong>{participants.length}</strong> peserta terdaftar
           </p>
         </div>
         <div className="hero-actions">
@@ -189,17 +189,17 @@ export function AdminParticipants({ eventId }) {
           </div>
 
           {/* Table Container */}
-          <div style={{ overflowX: "auto", margin: "0 -22px" }}>
-            <table className="data-table" style={{ margin: "0 22px", minWidth: "900px" }}>
+          <div className="table-scroll" style={{ width: "100%", overflowX: "auto" }}>
+            <table className="data-table" style={{ width: "100%", minWidth: "880px" }}>
               <thead>
                 <tr>
-                  <th>Peserta</th>
-                  <th>Nomor WhatsApp</th>
-                  <th>Instansi / Perusahaan</th>
-                  <th>Status</th>
-                  <th>ID Tiket</th>
-                  <th>Waktu Daftar</th>
-                  <th style={{ textAlign: "right" }}>Aksi</th>
+                  <th style={{ minWidth: "200px" }}>Peserta</th>
+                  <th style={{ minWidth: "140px" }}>Nomor WhatsApp</th>
+                  <th style={{ minWidth: "160px" }}>Instansi / Perusahaan</th>
+                  <th style={{ minWidth: "110px" }}>Status</th>
+                  <th style={{ minWidth: "120px" }}>ID Tiket</th>
+                  <th style={{ minWidth: "130px" }}>Waktu Daftar</th>
+                  <th style={{ textAlign: "right", minWidth: "190px" }}>Aksi</th>
                 </tr>
               </thead>
               <tbody>
@@ -218,8 +218,8 @@ export function AdminParticipants({ eventId }) {
                         </div>
                         <p style={{ fontSize: "12px", margin: 0, lineHeight: 1.5 }}>
                           {search || statusFilter !== "all"
-                            ? "Tidak ada peserta yang cocok dengan kriteria filter Anda."
-                            : "Peserta yang mendaftar melalui form publik akan langsung muncul di sini."}
+                            ? "Tidak ada peserta yang cocok dengan filter pencarian."
+                            : "Peserta yang mendaftar akan otomatis tercatat di sini."}
                         </p>
                       </div>
                     </td>
@@ -262,7 +262,7 @@ export function AdminParticipants({ eventId }) {
                         </td>
 
                         {/* WhatsApp */}
-                        <td style={{ color: "var(--t-base)" }}>
+                        <td style={{ color: "var(--t-base)", whiteSpace: "nowrap" }}>
                           {p.whatsapp || "-"}
                         </td>
 
@@ -272,7 +272,7 @@ export function AdminParticipants({ eventId }) {
                         </td>
 
                         {/* Status Badge */}
-                        <td>
+                        <td style={{ whiteSpace: "nowrap" }}>
                           {isChecked ? (
                             <span className="badge success dot">Hadir</span>
                           ) : (
@@ -283,12 +283,12 @@ export function AdminParticipants({ eventId }) {
                         </td>
 
                         {/* Ticket Code */}
-                        <td>
+                        <td style={{ whiteSpace: "nowrap" }}>
                           <span
                             className="data-cell-mono"
                             style={{
-                              fontSize: "11px",
-                              padding: "2px 6px",
+                              fontSize: "12px",
+                              padding: "3px 8px",
                               borderRadius: "4px",
                               background: "var(--bg-muted)",
                               border: "1px solid var(--border-soft)",
@@ -300,8 +300,8 @@ export function AdminParticipants({ eventId }) {
                         </td>
 
                         {/* Date Registered */}
-                        <td>
-                          <span className="data-cell-mono" style={{ fontSize: "11px" }}>
+                        <td style={{ whiteSpace: "nowrap" }}>
+                          <span className="data-cell-mono" style={{ fontSize: "11.5px" }}>
                             {p.created_at
                               ? new Date(p.created_at).toLocaleDateString("id-ID", {
                                   day: "numeric",
@@ -314,13 +314,13 @@ export function AdminParticipants({ eventId }) {
                         </td>
 
                         {/* Actions */}
-                        <td style={{ textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
-                          <div style={{ display: "inline-flex", gap: "6px", alignItems: "center" }}>
+                        <td style={{ textAlign: "right", whiteSpace: "nowrap" }} onClick={(e) => e.stopPropagation()}>
+                          <div style={{ display: "inline-flex", gap: "8px", alignItems: "center", justifyContent: "flex-end" }}>
                             <button
                               onClick={(e) => handleToggle(p.id, e)}
                               disabled={isToggling}
                               className={`btn btn--sm ${isChecked ? "btn--soft-warning" : "btn--primary"}`}
-                              style={{ fontSize: "11px", padding: "4px 10px" }}
+                              style={{ fontSize: "11px", padding: "5px 12px", whiteSpace: "nowrap" }}
                             >
                               {isToggling ? "..." : isChecked ? "Batal Hadir" : "Tandai Hadir"}
                             </button>
@@ -330,13 +330,9 @@ export function AdminParticipants({ eventId }) {
                               target="_blank"
                               rel="noreferrer"
                               className="btn btn--sm btn--ghost"
-                              style={{ padding: "4px 8px" }}
-                              title="Lihat Tiket"
+                              style={{ fontSize: "11px", padding: "5px 10px", whiteSpace: "nowrap" }}
                             >
-                              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                                <circle cx="12" cy="12" r="3" />
-                              </svg>
+                              Buka Tiket
                             </a>
                           </div>
                         </td>

@@ -5,10 +5,14 @@ import { notificationService } from "../notifications/notificationService.js";
 
 const router = Router();
 
-// Generate long high-entropy unique ticket code, e.g., TKT-A8F2K9M7P4W1Q6Z3B5D8J2R4
+// Generate human-friendly unique ticket code, e.g., TKT-7K9M2P
 function generateTicketCode(prefix = "TKT") {
-  const bytes = crypto.randomBytes(12).toString("hex").toUpperCase();
-  return `${prefix}-${bytes}`;
+  const chars = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"; // clean unambiguous characters (no 0/O, 1/I)
+  let code = "";
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return `${prefix}-${code}`;
 }
 
 // Get public event details for registration form

@@ -122,9 +122,6 @@ export function AdminEvents({ onSelectEvent, selectedEventId }) {
         <div className="hero-text">
           <span className="eyebrow">Pengaturan · Acara</span>
           <h1 className="hero-title">Manajemen Acara</h1>
-          <p className="hero-sub">
-            Buat dan atur acara Anda. Setiap acara memiliki link registrasi publik acak yang terisolasi dan tidak tercampur.
-          </p>
         </div>
         <div className="hero-actions">
           <button onClick={handleOpenCreate} className="btn btn--primary">
@@ -152,7 +149,7 @@ export function AdminEvents({ onSelectEvent, selectedEventId }) {
             Belum Ada Acara Dibuat
           </h3>
           <p style={{ color: "var(--t-muted)", fontSize: "13px", lineHeight: 1.6, margin: "0 auto 24px", maxWidth: "40ch" }}>
-            Data database telah dibersihkan dari dummy. Mulai buat acara pertama Anda untuk mengaktifkan link registrasi tamu.
+            Klik tombol di bawah untuk menambahkan acara baru.
           </p>
           <button onClick={handleOpenCreate} className="btn btn--primary" style={{ margin: "0 auto" }}>
             <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>

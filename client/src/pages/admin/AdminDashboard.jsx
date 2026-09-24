@@ -89,14 +89,14 @@ export function AdminDashboard({ eventId, onNavigateToScanner, onNavigateToParti
       <section className="hero">
         <div className="hero-text">
           <span className="eyebrow">
-            {event.date} · {event.location || "Lokasi Acara"}
+            {event.date} {event.time ? `· ${event.time}` : ""} {event.location ? `· ${event.location}` : ""}
           </span>
           <h1 className="hero-title">
-            {event.title} <span className="accent">/e/{event.slug}</span>
+            {event.title}
           </h1>
-          <p className="hero-sub">
-            {event.description || "Dashboard operasional acara: pantau registrasi, validasi QR tiket tamu, dan pantau kehadiran secara real-time."}
-          </p>
+          {event.description && (
+            <p className="hero-sub">{event.description}</p>
+          )}
         </div>
 
         <div className="hero-actions">
@@ -138,39 +138,39 @@ export function AdminDashboard({ eventId, onNavigateToScanner, onNavigateToParti
         </div>
       </section>
 
-      {/* 2. Adminator KPI Cards Grid */}
+      {/* 2. Adminator KPI Cards Grid (Untruncated) */}
       <section className="kpi-grid" aria-label="Key metrics">
         {/* Total Registered */}
         <article className="kpi-card c-primary">
           <div className="kpi-top">
-            <div className="kpi-identity">
-              <div className="kpi-icon primary">
-                <svg viewBox="0 0 24 24">
-                  <circle cx="12" cy="8" r="4" />
-                  <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8" />
-                </svg>
-              </div>
-              <div className="kpi-label">Total Terdaftar</div>
+            <div className="kpi-icon primary">
+              <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="8" r="4" />
+                <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8" />
+              </svg>
             </div>
             <span className="kpi-pill info">Tamu</span>
           </div>
+          <div className="kpi-label" style={{ whiteSpace: "normal", overflow: "visible", fontSize: "13.5px", fontWeight: 600, color: "var(--t-muted)" }}>
+            Total Terdaftar
+          </div>
           <div className="kpi-value">{metrics?.total_registered || 0}</div>
-          <div className="kpi-compare">Total registrasi terkonfirmasi</div>
+          <div className="kpi-compare">Total registrasi tamu</div>
         </article>
 
         {/* Checked In */}
         <article className="kpi-card c-success">
           <div className="kpi-top">
-            <div className="kpi-identity">
-              <div className="kpi-icon success">
-                <svg viewBox="0 0 24 24">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                  <polyline points="22 4 12 14.01 9 11.01" />
-                </svg>
-              </div>
-              <div className="kpi-label">Sudah Hadir</div>
+            <div className="kpi-icon success">
+              <svg viewBox="0 0 24 24">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <polyline points="22 4 12 14.01 9 11.01" />
+              </svg>
             </div>
-            <span className="kpi-pill up">Checked In</span>
+            <span className="kpi-pill up">Hadir</span>
+          </div>
+          <div className="kpi-label" style={{ whiteSpace: "normal", overflow: "visible", fontSize: "13.5px", fontWeight: 600, color: "var(--t-muted)" }}>
+            Sudah Hadir
           </div>
           <div className="kpi-value">{metrics?.checked_in || 0}</div>
           <div className="kpi-compare">Telah divalidasi masuk</div>
@@ -179,16 +179,16 @@ export function AdminDashboard({ eventId, onNavigateToScanner, onNavigateToParti
         {/* Pending Check-in */}
         <article className="kpi-card c-danger">
           <div className="kpi-top">
-            <div className="kpi-identity">
-              <div className="kpi-icon danger">
-                <svg viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="10" />
-                  <polyline points="12 6 12 12 16 14" />
-                </svg>
-              </div>
-              <div className="kpi-label">Belum Hadir</div>
+            <div className="kpi-icon danger">
+              <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
             </div>
             <span className="kpi-pill down">Pending</span>
+          </div>
+          <div className="kpi-label" style={{ whiteSpace: "normal", overflow: "visible", fontSize: "13.5px", fontWeight: 600, color: "var(--t-muted)" }}>
+            Belum Hadir
           </div>
           <div className="kpi-value">{metrics?.pending_checkin || 0}</div>
           <div className="kpi-compare">Menunggu kedatangan</div>
@@ -197,17 +197,17 @@ export function AdminDashboard({ eventId, onNavigateToScanner, onNavigateToParti
         {/* Attendance Rate */}
         <article className="kpi-card c-purple">
           <div className="kpi-top">
-            <div className="kpi-identity">
-              <div className="kpi-icon purple">
-                <svg viewBox="0 0 24 24">
-                  <line x1="19" y1="5" x2="5" y2="19" />
-                  <circle cx="6.5" cy="6.5" r="2.5" />
-                  <circle cx="17.5" cy="17.5" r="2.5" />
-                </svg>
-              </div>
-              <div className="kpi-label">Persentase Kehadiran</div>
+            <div className="kpi-icon purple">
+              <svg viewBox="0 0 24 24">
+                <line x1="19" y1="5" x2="5" y2="19" />
+                <circle cx="6.5" cy="6.5" r="2.5" />
+                <circle cx="17.5" cy="17.5" r="2.5" />
+              </svg>
             </div>
             <span className="kpi-pill flat">{metrics?.attendance_rate || 0}%</span>
+          </div>
+          <div className="kpi-label" style={{ whiteSpace: "normal", overflow: "visible", fontSize: "13.5px", fontWeight: 600, color: "var(--t-muted)" }}>
+            Persentase Kehadiran
           </div>
           <div className="kpi-value">
             {metrics?.attendance_rate || 0}<sup>%</sup>
@@ -216,13 +216,12 @@ export function AdminDashboard({ eventId, onNavigateToScanner, onNavigateToParti
         </article>
       </section>
 
-      {/* 3. Bottom Grid: Recent Check-ins & Operations */}
+      {/* 3. Bottom Section: Recent Check-ins (Full Width, No Dummy Guide) */}
       <div className="grid">
-        {/* Recent Check-ins */}
-        <section className="col-12 card" style={{ gridColumn: "span 8" }}>
+        <section className="col-12 card">
           <div className="card-head">
             <div className="card-title-wrap">
-              <span className="eyebrow">Realtime Feed</span>
+              <span className="eyebrow">Realtime</span>
               <h2 className="card-title">Kedatangan Terakhir</h2>
             </div>
             <button onClick={onNavigateToParticipants} className="card-action">
@@ -252,13 +251,13 @@ export function AdminDashboard({ eventId, onNavigateToScanner, onNavigateToParti
                     <tr key={idx}>
                       <td className="cell-name">{item.name}</td>
                       <td>
-                        <span className="mono" style={{ fontSize: "11px", color: "var(--t-muted)" }}>
+                        <span className="mono" style={{ fontSize: "12px", color: "var(--t-base)", fontWeight: 600 }}>
                           {item.ticket_code}
                         </span>
                       </td>
                       <td style={{ color: "var(--t-muted)" }}>{item.organization || "-"}</td>
                       <td>
-                        <span className="tag t-active">Checked In</span>
+                        <span className="tag t-active">Hadir</span>
                       </td>
                       <td style={{ textAlign: "right", color: "var(--t-light)", fontSize: "12px" }}>
                         {item.checkin_time
@@ -274,53 +273,6 @@ export function AdminDashboard({ eventId, onNavigateToScanner, onNavigateToParti
               </table>
             </div>
           )}
-        </section>
-
-        {/* Quick Operations Guide */}
-        <section className="col-12 card" style={{ gridColumn: "span 4" }}>
-          <div className="card-head">
-            <div className="card-title-wrap">
-              <span className="eyebrow">Petunjuk</span>
-              <h2 className="card-title">Alur Check-in</h2>
-            </div>
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "13px" }}>
-            <div style={{ padding: "12px 14px", borderRadius: "8px", background: "var(--bg-muted)", border: "1px solid var(--border-soft)" }}>
-              <strong style={{ color: "var(--t-base)", display: "block", marginBottom: "4px" }}>
-                1. Registrasi Tamu
-              </strong>
-              <p style={{ margin: 0, color: "var(--t-muted)", fontSize: "12px", lineHeight: 1.5 }}>
-                Tamu membuka link registrasi acak, mengisi formulir singkat, dan langsung menerima QR code tiket resmi.
-              </p>
-            </div>
-
-            <div style={{ padding: "12px 14px", borderRadius: "8px", background: "var(--bg-muted)", border: "1px solid var(--border-soft)" }}>
-              <strong style={{ color: "var(--t-base)", display: "block", marginBottom: "4px" }}>
-                2. Pindai di Pintu Masuk
-              </strong>
-              <p style={{ margin: 0, color: "var(--t-muted)", fontSize: "12px", lineHeight: 1.5 }}>
-                Panitia membuka menu <strong>Scan QR</strong> menggunakan kamera smartphone atau laptop untuk memindai tiket tamu.
-              </p>
-            </div>
-
-            <div style={{ padding: "12px 14px", borderRadius: "8px", background: "var(--bg-muted)", border: "1px solid var(--border-soft)" }}>
-              <strong style={{ color: "var(--t-base)", display: "block", marginBottom: "4px" }}>
-                3. Unduh Laporan Kehadiran
-              </strong>
-              <p style={{ margin: 0, color: "var(--t-muted)", fontSize: "12px", lineHeight: 1.5 }}>
-                Export data kehadiran kapan saja ke format CSV dari menu Daftar Peserta.
-              </p>
-            </div>
-
-            <button
-              onClick={onNavigateToScanner}
-              className="btn btn--primary"
-              style={{ width: "100%", justifyContent: "center", marginTop: "8px" }}
-            >
-              Buka Scanner Kamera
-            </button>
-          </div>
         </section>
       </div>
     </div>

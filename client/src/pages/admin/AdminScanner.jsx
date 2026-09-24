@@ -188,9 +188,6 @@ export function AdminScanner({ eventId, onCheckInComplete }) {
         <div className="hero-text">
           <span className="eyebrow">Validasi · Check-in</span>
           <h1 className="hero-title">Scan QR Tiket Tamu</h1>
-          <p className="hero-sub">
-            Gunakan kamera live untuk validasi instan kode QR tamu di pintu masuk, atau masukkan kode tiket secara manual.
-          </p>
         </div>
       </section>
 
