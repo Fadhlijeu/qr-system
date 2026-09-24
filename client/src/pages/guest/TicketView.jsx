@@ -4,6 +4,7 @@ import { TicketCard } from "../../components/TicketCard";
 
 export function TicketView({ ticketCode }) {
   const [ticketData, setTicketData] = useState(null);
+  const [theme, setTheme] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -17,8 +18,14 @@ export function TicketView({ ticketCode }) {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.getTicket(ticketCode);
+      const [res, orgData] = await Promise.all([
+        api.getTicket(ticketCode),
+        api.getPublicOrganizer().catch(() => null),
+      ]);
       setTicketData(res);
+      if (orgData?.organizer) {
+        setTheme(orgData.organizer);
+      }
     } catch (err) {
       setError(err.message || "Tiket tidak ditemukan.");
     } finally {
@@ -63,9 +70,16 @@ export function TicketView({ ticketCode }) {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg-body)", padding: "40px 16px" }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: theme?.bg_color || "var(--bg-body)",
+        fontFamily: theme?.font_family ? `'${theme.font_family}', sans-serif` : "inherit",
+        padding: "40px 16px",
+      }}
+    >
       <div style={{ maxWidth: "760px", margin: "0 auto 24px", textAlign: "center" }}>
-        <span className="eyebrow" style={{ display: "block", marginBottom: "6px" }}>
+        <span className="eyebrow" style={{ display: "block", marginBottom: "6px", color: theme?.accent_color || "var(--primary)" }}>
           E-Ticket Tamu Resmi
         </span>
         <h1 style={{ fontSize: "24px", fontWeight: 700, color: "var(--t-base)", margin: 0, letterSpacing: "-0.02em" }}>
@@ -73,7 +87,7 @@ export function TicketView({ ticketCode }) {
         </h1>
       </div>
 
-      <TicketCard ticket={ticketData.ticket} event={ticketData.event} />
+      <TicketCard ticket={ticketData.ticket} event={ticketData.event} theme={theme} />
     </div>
   );
 }

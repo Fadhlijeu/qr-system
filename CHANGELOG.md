@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased] - 2026-09-24
 
 ### Added
+- **Desain Tampilan Tamu (`AdminHomepageDesign` / Guest Experience Customizer)**:
+  - Reoriented design tool specifically for the attending guest experience rather than an organizer profile.
+  - Live split preview with tab switcher between **Form Registrasi Tamu** (`/e/:slug`) and **E-Ticket Tamu** (`/t/:ticketCode`).
+  - Customizer controls for guest visual branding (Banner Cover Tamu & Logo Acara), guest accent color presets/picker, mode tamu (Light/Dark), font typography, and custom arrival instructions.
+  - Dynamic theme integration: `GuestRegister.jsx`, `TicketView.jsx`, and `TicketCard.jsx` automatically fetch and apply the active theme colors, font family, banner, and logo for visiting guests.
 - **Saved Locations / Reusable Venues (`AdminLocations`)**:
   - Dedicated venue management screen with empty state ("No Saved Locations"), custom venue creation, interactive map coordinate pin, capacity limits, and Google Maps shortcuts.
   - Automatic venue caching: any new venue/address entered during event creation is automatically cached to `saved_locations`.
@@ -46,6 +51,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Event registration slugs are now generated as pure unguessable alphanumeric tokens (`/e/evt-[random20]`) with no event title leakage, set to read-only in forms.
 - **Git Hygiene**:
   - Added `_adminator_ref/` and temporary dump files to `.gitignore` to keep repositories clean.
+
+### Removed
+- **Pengaturan (Settings) Pruning (`AdminSettings`)**:
+  - Removed unwanted SaaS sections: `Biaya Platform`, `Payouts & Rekening`, `SEO & Meta Tags`, `Tracking & Analytics`, and `Danger Zone`.
+  - Retained an ultra-clean, focused settings menu: Basic Information, Event Defaults, Address (Saved Venues), Social Links, and Email Templates.
 
 ### Fixed
 - **Dashboard Label Visibility**:

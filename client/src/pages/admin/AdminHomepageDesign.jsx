@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { QRCodeSVG } from "qrcode.react";
 import { api } from "../../api";
 
 const AVAILABLE_FONTS = [
@@ -10,12 +11,12 @@ const AVAILABLE_FONTS = [
 ];
 
 const PRESET_ACCENTS = [
-  "#8b5cf6", // Purple (Hi.Events default)
-  "#2563eb", // Blue
-  "#0d9488", // Teal
-  "#16a34a", // Emerald
-  "#ea580c", // Orange
-  "#e11d48", // Rose
+  "#8b5cf6", // Royal Purple
+  "#2563eb", // Ocean Blue
+  "#0d9488", // Emerald Teal
+  "#16a34a", // Forest Green
+  "#ea580c", // Sunset Orange
+  "#e11d48", // Rose Red
 ];
 
 export function AdminHomepageDesign({ onNavigateToCreateEvent }) {
@@ -25,27 +26,28 @@ export function AdminHomepageDesign({ onNavigateToCreateEvent }) {
     logo_url: "",
     cover_url: "",
     accent_color: "#8b5cf6",
-    bg_color: "#f5f3ff",
+    bg_color: "#f8fafc",
     color_mode: "light",
     font_family: "Outfit",
+    email_template: "Tunjukkan tiket QR ini kepada panitia di pintu masuk acara untuk check-in instan.",
     is_published: 1,
   });
 
-  const [events, setEvents] = useState([]);
+  const [activeEvent, setActiveEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [copied, setCopied] = useState(false);
 
-  // Active accordion sections
+  // Accordion sections
   const [openSections, setOpenSections] = useState({
-    images: true,
+    branding: true,
     theme: true,
     typography: true,
+    messages: true,
   });
 
-  // Preview tab: upcoming vs past
-  const [previewTab, setPreviewTab] = useState("upcoming");
+  // Preview tab: "register" (Form Tamu) vs "ticket" (E-Ticket Tamu)
+  const [previewTab, setPreviewTab] = useState("register");
 
   useEffect(() => {
     loadData();
@@ -60,9 +62,15 @@ export function AdminHomepageDesign({ onNavigateToCreateEvent }) {
       ]);
 
       if (orgRes?.organizer) {
-        setOrganizer(orgRes.organizer);
+        setOrganizer((prev) => ({
+          ...prev,
+          ...orgRes.organizer,
+          email_template: orgRes.organizer.email_template || prev.email_template,
+        }));
       }
-      setEvents(evRes?.events || []);
+      if (evRes?.events && evRes.events.length > 0) {
+        setActiveEvent(evRes.events[0]);
+      }
     } catch (err) {
       console.error("Gagal memuat data desain:", err);
     } finally {
@@ -79,7 +87,9 @@ export function AdminHomepageDesign({ onNavigateToCreateEvent }) {
     setSaveSuccess(false);
     try {
       const res = await api.updateOrganizerSettings(organizer);
-      if (res?.organizer) setOrganizer(res.organizer);
+      if (res?.organizer) {
+        setOrganizer((prev) => ({ ...prev, ...res.organizer }));
+      }
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
@@ -87,13 +97,6 @@ export function AdminHomepageDesign({ onNavigateToCreateEvent }) {
     } finally {
       setSaving(false);
     }
-  };
-
-  const handleShare = () => {
-    const publicUrl = `${window.location.origin}/org`;
-    navigator.clipboard.writeText(publicUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleImageUpload = (field, e) => {
@@ -110,84 +113,38 @@ export function AdminHomepageDesign({ onNavigateToCreateEvent }) {
     reader.readAsDataURL(file);
   };
 
-  // Determine contrast warning between text and background
-  const isDarkBg = organizer.color_mode === "dark" || organizer.bg_color === "#0f172a";
-  const lowContrastWarning = !isDarkBg && (organizer.bg_color === "#ffffff" && organizer.accent_color === "#fef08a");
+  const isDark = organizer.color_mode === "dark";
+  const activeFont = AVAILABLE_FONTS.find((f) => f.id === organizer.font_family)?.family || "'Outfit', sans-serif";
+
+  // Event info for mock preview
+  const displayTitle = activeEvent?.title || "Grand Opening & Exclusive Exhibition 2026";
+  const displayDate = activeEvent?.date || "Sabtu, 28 Oktober 2026";
+  const displayTime = activeEvent?.time || "19:00 WIB";
+  const displayLocation = activeEvent?.location || "Grand Ballroom Hotel Indonesia, Jakarta";
+  const displayCover = organizer.cover_url || activeEvent?.image_url;
 
   return (
     <div>
-      {/* Sub-header & Breadcrumb Navigation matching Screenshot 2 */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "10px 0 16px",
-          borderBottom: "1px solid var(--border-soft)",
-          marginBottom: "20px",
-          flexWrap: "wrap",
-          gap: "10px",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "var(--t-muted)" }}>
-          <span style={{ fontWeight: 600, color: "var(--t-base)" }}>{organizer.name || "Organizer"}</span>
-          <span>/</span>
-          <button
-            onClick={() => onNavigateToCreateEvent && onNavigateToCreateEvent()}
-            style={{
-              background: "none",
-              border: "none",
-              padding: 0,
-              color: "var(--primary)",
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "4px",
-              fontWeight: 500,
-            }}
-          >
-            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="3" y="4" width="18" height="18" rx="2" />
-              <path d="M16 2v4M8 2v4M3 10h18" />
-            </svg>
-            <span>Create Event</span>
-          </button>
+      {/* Header Section */}
+      <section className="hero" style={{ marginBottom: "20px" }}>
+        <div className="hero-text">
+          <span className="eyebrow">Kustomisasi · Tampilan Tamu</span>
+          <h1 className="hero-title">Desain Tampilan Tamu</h1>
+          <p style={{ margin: "4px 0 0", fontSize: "13px", color: "var(--t-muted)" }}>
+            Atur tema warna, font, logo, dan banner formulir pendaftaran serta kartu E-Ticket resmi yang dilihat oleh para tamu.
+          </p>
         </div>
+      </section>
 
-        <button
-          onClick={handleShare}
-          className="btn btn--sm btn--ghost"
-          style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "12px" }}
-        >
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="18" cy="5" r="3" />
-            <circle cx="6" cy="12" r="3" />
-            <circle cx="18" cy="19" r="3" />
-            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-          </svg>
-          <span>{copied ? "Link Tersalin!" : "Share Organizer Page"}</span>
-        </button>
-      </div>
-
-      {/* Main Title */}
-      <div style={{ marginBottom: "24px" }}>
-        <h1 style={{ fontSize: "22px", fontWeight: 700, margin: "0 0 4px", color: "var(--t-base)" }}>
-          Homepage Design
-        </h1>
-        <p style={{ margin: 0, fontSize: "13px", color: "var(--t-muted)" }}>
-          Customize your organizer page appearance
-        </p>
-      </div>
-
-      {/* Two-Column Editor Layout matching Screenshots 2, 3, 4 */}
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(340px, 420px) minmax(360px, 1fr)", gap: "24px", alignItems: "start" }}>
+      {/* Two-Column Editor Layout */}
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(330px, 390px) minmax(360px, 1fr)", gap: "24px", alignItems: "start" }}>
         {/* Left Column: Configuration Controls */}
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          {/* 1. Images Accordion (Screenshot 2) */}
+          
+          {/* 1. Branding & Visual Tamu */}
           <div className="card" style={{ padding: 0, overflow: "hidden", border: "1px solid var(--border-soft)", borderRadius: "12px" }}>
             <div
-              onClick={() => toggleSection("images")}
+              onClick={() => toggleSection("branding")}
               style={{
                 padding: "14px 18px",
                 display: "flex",
@@ -199,35 +156,30 @@ export function AdminHomepageDesign({ onNavigateToCreateEvent }) {
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
-                  <circle cx="8.5" cy="8.5" r="1.5" />
-                  <polyline points="21 15 16 10 5 21" />
-                </svg>
-                <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--t-base)" }}>Images</span>
+                <span style={{ fontSize: "16px" }}>🎨</span>
+                <span style={{ fontSize: "13.5px", fontWeight: 700, color: "var(--t-base)" }}>
+                  Branding & Visual Tamu
+                </span>
               </div>
-              <span style={{ fontSize: "12px", color: "var(--t-light)", transform: openSections.images ? "rotate(180deg)" : "none", transition: "transform .2s" }}>
+              <span style={{ fontSize: "12px", color: "var(--t-light)", transform: openSections.branding ? "rotate(180deg)" : "none", transition: "transform .2s" }}>
                 ▲
               </span>
             </div>
 
-            {openSections.images && (
+            {openSections.branding && (
               <div style={{ padding: "16px 18px 20px", borderTop: "1px solid var(--border-soft)", display: "flex", flexDirection: "column", gap: "16px" }}>
-                {/* Cover Image */}
+                {/* Cover Banner */}
                 <div>
-                  <label style={{ fontSize: "12.5px", fontWeight: 600, color: "var(--t-base)", display: "flex", alignItems: "center", gap: "4px", marginBottom: "8px" }}>
-                    <span>Cover Image</span>
-                    <span title="Cover image will be displayed at the top of your organizer page" style={{ color: "var(--t-light)", cursor: "help" }}>ⓘ</span>
+                  <label style={{ fontSize: "12px", fontWeight: 600, color: "var(--t-base)", display: "block", marginBottom: "6px" }}>
+                    Banner Cover Tamu
                   </label>
-
                   <div
                     style={{
                       border: "2px dashed var(--border)",
                       borderRadius: "10px",
-                      padding: "24px 16px",
+                      padding: "16px",
                       textAlign: "center",
                       background: "var(--bg-muted)",
-                      cursor: "pointer",
                       position: "relative",
                       overflow: "hidden",
                     }}
@@ -242,40 +194,37 @@ export function AdminHomepageDesign({ onNavigateToCreateEvent }) {
                       <div>
                         <img
                           src={organizer.cover_url}
-                          alt="Cover preview"
-                          style={{ maxHeight: "90px", maxWidth: "100%", borderRadius: "6px", objectFit: "cover", margin: "0 auto 8px", display: "block" }}
+                          alt="Cover Banner Tamu"
+                          style={{ maxHeight: "80px", maxWidth: "100%", borderRadius: "6px", objectFit: "cover", margin: "0 auto 6px", display: "block" }}
                         />
-                        <span style={{ fontSize: "11px", color: "var(--primary)", fontWeight: 600 }}>Ganti Cover Image</span>
+                        <span style={{ fontSize: "11px", color: "var(--primary)", fontWeight: 600 }}>Klik untuk ganti banner</span>
                       </div>
                     ) : (
                       <div>
-                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" style={{ margin: "0 auto 6px", color: "var(--t-light)" }}>
+                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" style={{ margin: "0 auto 4px", color: "var(--t-light)" }}>
                           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
                         </svg>
-                        <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--t-base)" }}>Click to upload</div>
+                        <div style={{ fontSize: "11.5px", fontWeight: 600, color: "var(--t-base)" }}>Unggah Banner Acara Tamu</div>
                         <div style={{ fontSize: "10.5px", color: "var(--t-muted)", marginTop: "2px" }}>
-                          Cover image will be displayed at the top of your organizer page
+                          Rasio 21:9 atau banner horizontal (Maks. 2MB)
                         </div>
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* Logo Image */}
+                {/* Logo Tamu */}
                 <div>
-                  <label style={{ fontSize: "12.5px", fontWeight: 600, color: "var(--t-base)", display: "flex", alignItems: "center", gap: "4px", marginBottom: "8px" }}>
-                    <span>Logo</span>
-                    <span title="Logo will be displayed in the header" style={{ color: "var(--t-light)", cursor: "help" }}>ⓘ</span>
+                  <label style={{ fontSize: "12px", fontWeight: 600, color: "var(--t-base)", display: "block", marginBottom: "6px" }}>
+                    Logo Acara / Penyelenggara
                   </label>
-
                   <div
                     style={{
                       border: "2px dashed var(--border)",
                       borderRadius: "10px",
-                      padding: "20px 16px",
+                      padding: "14px",
                       textAlign: "center",
                       background: "var(--bg-muted)",
-                      cursor: "pointer",
                       position: "relative",
                       overflow: "hidden",
                     }}
@@ -290,29 +239,39 @@ export function AdminHomepageDesign({ onNavigateToCreateEvent }) {
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
                         <img
                           src={organizer.logo_url}
-                          alt="Logo preview"
-                          style={{ width: "44px", height: "44px", borderRadius: "50%", objectFit: "cover" }}
+                          alt="Logo Tamu"
+                          style={{ width: "42px", height: "42px", borderRadius: "50%", objectFit: "cover", border: "2px solid #fff" }}
                         />
-                        <span style={{ fontSize: "11px", color: "var(--primary)", fontWeight: 600 }}>Ganti Logo</span>
+                        <span style={{ fontSize: "11px", color: "var(--primary)", fontWeight: 600 }}>Klik untuk ganti logo</span>
                       </div>
                     ) : (
                       <div>
-                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" style={{ margin: "0 auto 4px", color: "var(--t-light)" }}>
-                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
-                        </svg>
-                        <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--t-base)" }}>Click to upload</div>
-                        <div style={{ fontSize: "10.5px", color: "var(--t-muted)", marginTop: "2px" }}>
-                          Logo will be displayed in the header
+                        <div style={{ fontSize: "11.5px", fontWeight: 600, color: "var(--t-base)" }}>Unggah Logo (Maks. 2MB)</div>
+                        <div style={{ fontSize: "10px", color: "var(--t-muted)", marginTop: "2px" }}>
+                          Akan tampil di samping nama acara pada formulir & tiket tamu
                         </div>
                       </div>
                     )}
                   </div>
                 </div>
+
+                {/* Nama Penyelenggara */}
+                <div className="field" style={{ margin: 0 }}>
+                  <label className="field-label" style={{ fontSize: "12px" }}>Nama Penyelenggara Resmi</label>
+                  <input
+                    className="input"
+                    type="text"
+                    value={organizer.name}
+                    onChange={(e) => setOrganizer((prev) => ({ ...prev, name: e.target.value }))}
+                    placeholder="Contoh: Grand Opening Committee"
+                    style={{ fontSize: "13px" }}
+                  />
+                </div>
               </div>
             )}
           </div>
 
-          {/* 2. Theme & Colors Accordion (Screenshots 3 & 4) */}
+          {/* 2. Tema & Warna Tamu */}
           <div className="card" style={{ padding: 0, overflow: "hidden", border: "1px solid var(--border-soft)", borderRadius: "12px" }}>
             <div
               onClick={() => toggleSection("theme")}
@@ -327,11 +286,10 @@ export function AdminHomepageDesign({ onNavigateToCreateEvent }) {
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="m4.93 4.93 4.24 4.24M14.83 9.17l4.24-4.24M14.83 14.83l4.24 4.24M9.17 14.83l-4.24 4.24" />
-                </svg>
-                <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--t-base)" }}>Theme & Colors</span>
+                <span style={{ fontSize: "16px" }}>🎯</span>
+                <span style={{ fontSize: "13.5px", fontWeight: 700, color: "var(--t-base)" }}>
+                  Tema Warna Tamu
+                </span>
               </div>
               <span style={{ fontSize: "12px", color: "var(--t-light)", transform: openSections.theme ? "rotate(180deg)" : "none", transition: "transform .2s" }}>
                 ▲
@@ -340,160 +298,91 @@ export function AdminHomepageDesign({ onNavigateToCreateEvent }) {
 
             {openSections.theme && (
               <div style={{ padding: "16px 18px 20px", borderTop: "1px solid var(--border-soft)", display: "flex", flexDirection: "column", gap: "16px" }}>
-                {/* Background Type */}
-                <div>
-                  <label style={{ fontSize: "12px", fontWeight: 600, color: "var(--t-base)", display: "block", marginBottom: "6px" }}>
-                    Background Type
-                  </label>
-                  <div
-                    style={{
-                      border: "1px solid var(--border)",
-                      borderRadius: "8px",
-                      padding: "10px 12px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      background: "var(--bg-card)",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                      </svg>
-                      <div>
-                        <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--t-base)" }}>Color</div>
-                        <div style={{ fontSize: "10.5px", color: "var(--t-muted)" }}>Choose a color for your background</div>
-                      </div>
-                    </div>
-                    <span style={{ fontSize: "11px", color: "var(--t-light)" }}>⇅</span>
-                  </div>
-                </div>
-
                 {/* Accent Color */}
                 <div>
-                  <label style={{ fontSize: "12px", fontWeight: 600, color: "var(--t-base)", display: "block", marginBottom: "2px" }}>
-                    Accent Color
+                  <label style={{ fontSize: "12px", fontWeight: 600, color: "var(--t-base)", display: "block", marginBottom: "4px" }}>
+                    Warna Aksen Utama Tamu
                   </label>
-                  <p style={{ margin: "0 0 8px", fontSize: "11px", color: "var(--t-muted)" }}>
-                    The primary brand color used for buttons and highlights
+                  <p style={{ margin: "0 0 10px", fontSize: "11px", color: "var(--t-muted)" }}>
+                    Digunakan untuk tombol submit pendaftaran, border tiket QR, dan badge konfirmasi tamu.
                   </p>
 
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <div
-                      style={{
-                        flex: 1,
-                        border: "1px solid var(--border)",
-                        borderRadius: "8px",
-                        padding: "6px 10px",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        background: "var(--bg-card)",
-                      }}
-                    >
-                      <input
-                        type="color"
-                        value={organizer.accent_color || "#8b5cf6"}
-                        onChange={(e) => setOrganizer((prev) => ({ ...prev, accent_color: e.target.value }))}
-                        style={{ width: "24px", height: "24px", border: "none", borderRadius: "50%", cursor: "pointer", padding: 0 }}
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginBottom: "12px" }}>
+                    {PRESET_ACCENTS.map((hex) => (
+                      <button
+                        key={hex}
+                        type="button"
+                        onClick={() => setOrganizer((prev) => ({ ...prev, accent_color: hex }))}
+                        style={{
+                          width: "32px",
+                          height: "32px",
+                          borderRadius: "8px",
+                          background: hex,
+                          border: organizer.accent_color === hex ? "3px solid #000" : "2px solid #fff",
+                          boxShadow: organizer.accent_color === hex ? "0 0 0 2px var(--primary)" : "0 1px 3px rgba(0,0,0,0.15)",
+                          cursor: "pointer",
+                        }}
                       />
-                      <span className="mono" style={{ fontSize: "12px", fontWeight: 600, color: "var(--t-base)" }}>
-                        {organizer.accent_color || "#8b5cf6"}
-                      </span>
-                    </div>
-
-                    {/* Presets */}
-                    <div style={{ display: "flex", gap: "4px" }}>
-                      {PRESET_ACCENTS.map((hex) => (
-                        <button
-                          key={hex}
-                          type="button"
-                          onClick={() => setOrganizer((prev) => ({ ...prev, accent_color: hex }))}
-                          style={{
-                            width: "22px",
-                            height: "22px",
-                            borderRadius: "50%",
-                            background: hex,
-                            border: organizer.accent_color === hex ? "2px solid #000" : "1px solid rgba(0,0,0,0.1)",
-                            cursor: "pointer",
-                            padding: 0,
-                          }}
-                          title={hex}
-                        />
-                      ))}
-                    </div>
+                    ))}
                   </div>
-                </div>
 
-                {/* Background Color */}
-                <div>
-                  <label style={{ fontSize: "12px", fontWeight: 600, color: "var(--t-base)", display: "block", marginBottom: "2px" }}>
-                    Background Color
-                  </label>
-                  <p style={{ margin: "0 0 8px", fontSize: "11px", color: "var(--t-muted)", lineHeight: 1.4 }}>
-                    The background color of the page. When using cover image, this is applied as an overlay.
-                  </p>
-
-                  <div
-                    style={{
-                      border: "1px solid var(--border)",
-                      borderRadius: "8px",
-                      padding: "6px 10px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      background: "var(--bg-card)",
-                    }}
-                  >
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                     <input
                       type="color"
-                      value={organizer.bg_color || "#f5f3ff"}
-                      onChange={(e) => setOrganizer((prev) => ({ ...prev, bg_color: e.target.value }))}
-                      style={{ width: "24px", height: "24px", border: "none", borderRadius: "50%", cursor: "pointer", padding: 0 }}
+                      value={organizer.accent_color || "#8b5cf6"}
+                      onChange={(e) => setOrganizer((prev) => ({ ...prev, accent_color: e.target.value }))}
+                      style={{ width: "36px", height: "36px", border: "none", borderRadius: "6px", cursor: "pointer", padding: 0 }}
                     />
-                    <span className="mono" style={{ fontSize: "12px", fontWeight: 600, color: "var(--t-base)" }}>
-                      {organizer.bg_color || "#f5f3ff"}
-                    </span>
+                    <input
+                      className="input mono"
+                      type="text"
+                      value={organizer.accent_color}
+                      onChange={(e) => setOrganizer((prev) => ({ ...prev, accent_color: e.target.value }))}
+                      style={{ fontSize: "12.5px", width: "110px" }}
+                    />
                   </div>
                 </div>
 
-                {/* Color Mode & Contrast Alert (Screenshot 4) */}
+                {/* Color Mode Tamu */}
                 <div>
-                  <label style={{ fontSize: "12px", fontWeight: 600, color: "var(--t-base)", display: "block", marginBottom: "2px" }}>
-                    Color Mode
+                  <label style={{ fontSize: "12px", fontWeight: 600, color: "var(--t-base)", display: "block", marginBottom: "8px" }}>
+                    Mode Tampilan Tamu
                   </label>
-                  <p style={{ margin: "0 0 8px", fontSize: "11px", color: "var(--t-muted)" }}>
-                    Automatically detected based on background color, but can be overridden
-                  </p>
-
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", background: "var(--bg-muted)", padding: "3px", borderRadius: "8px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
                     <button
                       type="button"
-                      onClick={() => setOrganizer((prev) => ({ ...prev, color_mode: "light" }))}
-                      className="btn btn--sm"
+                      onClick={() => setOrganizer((prev) => ({ ...prev, color_mode: "light", bg_color: "#f8fafc" }))}
                       style={{
-                        background: organizer.color_mode === "light" ? "#ffffff" : "transparent",
-                        color: organizer.color_mode === "light" ? "var(--t-base)" : "var(--t-muted)",
-                        boxShadow: organizer.color_mode === "light" ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+                        padding: "10px",
+                        borderRadius: "8px",
+                        border: !isDark ? "2px solid var(--primary)" : "1px solid var(--border)",
+                        background: !isDark ? "var(--primary-soft)" : "var(--bg-card)",
+                        color: !isDark ? "var(--primary)" : "var(--t-base)",
                         fontSize: "12px",
+                        fontWeight: 600,
+                        cursor: "pointer",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         gap: "6px",
                       }}
                     >
-                      <span>☼</span>
-                      <span>Light</span>
+                      <span>☀</span>
+                      <span>Light Mode</span>
                     </button>
+
                     <button
                       type="button"
-                      onClick={() => setOrganizer((prev) => ({ ...prev, color_mode: "dark" }))}
-                      className="btn btn--sm"
+                      onClick={() => setOrganizer((prev) => ({ ...prev, color_mode: "dark", bg_color: "#0f172a" }))}
                       style={{
-                        background: organizer.color_mode === "dark" ? "#ffffff" : "transparent",
-                        color: organizer.color_mode === "dark" ? "var(--t-base)" : "var(--t-muted)",
-                        boxShadow: organizer.color_mode === "dark" ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+                        padding: "10px",
+                        borderRadius: "8px",
+                        border: isDark ? "2px solid var(--primary)" : "1px solid var(--border)",
+                        background: isDark ? "var(--primary-soft)" : "var(--bg-card)",
+                        color: isDark ? "var(--primary)" : "var(--t-base)",
                         fontSize: "12px",
+                        fontWeight: 600,
+                        cursor: "pointer",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -501,22 +390,15 @@ export function AdminHomepageDesign({ onNavigateToCreateEvent }) {
                       }}
                     >
                       <span>☾</span>
-                      <span>Dark</span>
+                      <span>Dark Mode</span>
                     </button>
                   </div>
-
-                  {lowContrastWarning && (
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "8px", color: "#d97706", fontSize: "11px", fontWeight: 500 }}>
-                      <span style={{ fontSize: "14px" }}>👁</span>
-                      <span>Text may be hard to read</span>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
           </div>
 
-          {/* 3. Typography Accordion (Screenshot 4) */}
+          {/* 3. Tipografi Tamu */}
           <div className="card" style={{ padding: 0, overflow: "hidden", border: "1px solid var(--border-soft)", borderRadius: "12px" }}>
             <div
               onClick={() => toggleSection("typography")}
@@ -531,8 +413,10 @@ export function AdminHomepageDesign({ onNavigateToCreateEvent }) {
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <span style={{ fontSize: "16px", fontWeight: 700, fontFamily: "serif" }}>A</span>
-                <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--t-base)" }}>Typography</span>
+                <span style={{ fontSize: "16px", fontWeight: 700 }}>A</span>
+                <span style={{ fontSize: "13.5px", fontWeight: 700, color: "var(--t-base)" }}>
+                  Tipografi Tamu
+                </span>
               </div>
               <span style={{ fontSize: "12px", color: "var(--t-light)", transform: openSections.typography ? "rotate(180deg)" : "none", transition: "transform .2s" }}>
                 ▲
@@ -540,283 +424,463 @@ export function AdminHomepageDesign({ onNavigateToCreateEvent }) {
             </div>
 
             {openSections.typography && (
-              <div style={{ padding: "16px 18px 20px", borderTop: "1px solid var(--border-soft)", display: "flex", flexDirection: "column", gap: "14px" }}>
-                <div>
-                  <label style={{ fontSize: "12px", fontWeight: 600, color: "var(--t-base)", display: "block", marginBottom: "2px" }}>
-                    Font Family
-                  </label>
-                  <p style={{ margin: "0 0 8px", fontSize: "11px", color: "var(--t-muted)" }}>
-                    Choose a typeface that matches your brand. Fonts are rendered crisp in modern browsers.
-                  </p>
-
-                  <select
-                    className="select"
-                    value={organizer.font_family || "Outfit"}
-                    onChange={(e) => setOrganizer((prev) => ({ ...prev, font_family: e.target.value }))}
-                    style={{ fontSize: "13px" }}
-                  >
-                    {AVAILABLE_FONTS.map((f) => (
-                      <option key={f.id} value={f.id}>
-                        {f.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <div style={{ padding: "16px 18px 20px", borderTop: "1px solid var(--border-soft)", display: "flex", flexDirection: "column", gap: "12px" }}>
+                <label style={{ fontSize: "12px", fontWeight: 600, color: "var(--t-base)", display: "block" }}>
+                  Pilihan Font Halaman Tamu
+                </label>
+                <select
+                  className="select"
+                  value={organizer.font_family || "Outfit"}
+                  onChange={(e) => setOrganizer((prev) => ({ ...prev, font_family: e.target.value }))}
+                  style={{ fontSize: "13px" }}
+                >
+                  {AVAILABLE_FONTS.map((f) => (
+                    <option key={f.id} value={f.id}>
+                      {f.name}
+                    </option>
+                  ))}
+                </select>
 
                 <div
                   style={{
                     padding: "10px 12px",
                     background: "var(--bg-muted)",
                     borderRadius: "8px",
-                    fontSize: "12.5px",
-                    color: "var(--t-muted)",
-                    fontFamily: AVAILABLE_FONTS.find((f) => f.id === organizer.font_family)?.family || "sans-serif",
+                    fontSize: "12px",
+                    color: "var(--t-base)",
+                    fontFamily: activeFont,
                   }}
                 >
-                  The quick brown fox jumps over the lazy dog.
+                  Selamat datang para tamu undangan resmi di acara Grand Opening.
                 </div>
               </div>
             )}
           </div>
 
-          {/* Save Action Button */}
+          {/* 4. Instruksi & Catatan Tiket Tamu */}
+          <div className="card" style={{ padding: 0, overflow: "hidden", border: "1px solid var(--border-soft)", borderRadius: "12px" }}>
+            <div
+              onClick={() => toggleSection("messages")}
+              style={{
+                padding: "14px 18px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                cursor: "pointer",
+                background: "var(--bg-card)",
+                userSelect: "none",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <span style={{ fontSize: "16px" }}>📋</span>
+                <span style={{ fontSize: "13.5px", fontWeight: 700, color: "var(--t-base)" }}>
+                  Instruksi E-Ticket Tamu
+                </span>
+              </div>
+              <span style={{ fontSize: "12px", color: "var(--t-light)", transform: openSections.messages ? "rotate(180deg)" : "none", transition: "transform .2s" }}>
+                ▲
+              </span>
+            </div>
+
+            {openSections.messages && (
+              <div style={{ padding: "16px 18px 20px", borderTop: "1px solid var(--border-soft)", display: "flex", flexDirection: "column", gap: "12px" }}>
+                <label style={{ fontSize: "12px", fontWeight: 600, color: "var(--t-base)", display: "block" }}>
+                  Catatan Kedatangan pada E-Ticket
+                </label>
+                <textarea
+                  className="textarea"
+                  rows={3}
+                  value={organizer.email_template}
+                  onChange={(e) => setOrganizer((prev) => ({ ...prev, email_template: e.target.value }))}
+                  placeholder="Contoh: Tunjukkan tiket QR ini kepada panitia di pintu masuk acara untuk check-in..."
+                  style={{ fontSize: "12px" }}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Save Action */}
           <button
             onClick={handleSave}
             disabled={saving}
             className="btn btn--primary"
-            style={{ width: "100%", padding: "12px", fontSize: "13.5px", justifyContent: "center" }}
+            style={{ width: "100%", padding: "13px", fontSize: "13.5px", justifyContent: "center" }}
           >
-            {saving ? "Menyimpan Desain..." : saveSuccess ? "✓ Desain Tersimpan!" : "Simpan Perubahan Desain"}
+            {saving ? "Menyimpan Desain..." : saveSuccess ? "✓ Desain Tamu Disimpan!" : "Simpan Desain Tamu"}
           </button>
         </div>
 
-        {/* Right Column: Live Real-Time Interactive Preview matching Screenshot 2 */}
+        {/* Right Column: Live Guest Experience Preview */}
         <div style={{ position: "sticky", top: "20px" }}>
-          {/* Top Preview Banner */}
+          {/* Top Preview Bar with Switcher */}
           <div
             style={{
-              padding: "8px 14px",
-              background: "#475569",
+              padding: "10px 14px",
+              background: "#334155",
               color: "#ffffff",
-              borderRadius: "10px 10px 0 0",
-              fontSize: "12px",
+              borderRadius: "12px 12px 0 0",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: "8px",
             }}
           >
-            <span style={{ fontSize: "11.5px" }}>
-              {organizer.is_published ? "This organizer profile is published" : "This organizer profile is not published yet"}
-            </span>
-            <button
-              onClick={() => setOrganizer((prev) => ({ ...prev, is_published: prev.is_published ? 0 : 1 }))}
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <button
+                type="button"
+                onClick={() => setPreviewTab("register")}
+                style={{
+                  padding: "5px 12px",
+                  borderRadius: "6px",
+                  border: "none",
+                  background: previewTab === "register" ? organizer.accent_color : "rgba(255,255,255,0.15)",
+                  color: "#ffffff",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
+                <span>📝</span>
+                <span>Form Registrasi Tamu</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPreviewTab("ticket")}
+                style={{
+                  padding: "5px 12px",
+                  borderRadius: "6px",
+                  border: "none",
+                  background: previewTab === "ticket" ? organizer.accent_color : "rgba(255,255,255,0.15)",
+                  color: "#ffffff",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
+                <span>🎟</span>
+                <span>E-Ticket Tamu</span>
+              </button>
+            </div>
+
+            <a
+              href={activeEvent?.slug ? `/e/${activeEvent.slug}` : "/"}
+              target="_blank"
+              rel="noreferrer"
               style={{
-                background: organizer.is_published ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.3)",
-                border: "none",
-                borderRadius: "4px",
-                color: "#fff",
-                fontSize: "10.5px",
-                padding: "3px 8px",
-                cursor: "pointer",
+                color: "#e2e8f0",
+                fontSize: "11px",
+                textDecoration: "none",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "4px",
+                fontWeight: 500,
               }}
             >
-              <span>👁</span>
-              <span>{organizer.is_published ? "Published" : "Publish"}</span>
-            </button>
+              <span>Buka Halaman Tamu</span>
+              <span>↗</span>
+            </a>
           </div>
 
-          {/* Embedded Mockup Canvas (Styled dynamically with live props) */}
+          {/* Embedded Guest Mockup Canvas */}
           <div
             style={{
-              background: organizer.bg_color || "#f5f3ff",
+              background: organizer.bg_color || "#f8fafc",
               borderRadius: "0 0 14px 14px",
               border: "1px solid var(--border)",
               borderTop: "none",
               padding: "24px 20px",
-              minHeight: "520px",
+              minHeight: "560px",
               display: "flex",
               flexDirection: "column",
-              gap: "20px",
-              fontFamily: AVAILABLE_FONTS.find((f) => f.id === organizer.font_family)?.family || "sans-serif",
-              color: organizer.color_mode === "dark" ? "#f8fafc" : "#0f172a",
+              fontFamily: activeFont,
+              color: isDark ? "#f8fafc" : "#0f172a",
               boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
+              transition: "background .2s, color .2s",
             }}
           >
-            {/* Organizer Header Card */}
-            <div
-              style={{
-                background: organizer.color_mode === "dark" ? "#1e293b" : "#ffffff",
-                borderRadius: "14px",
-                overflow: "hidden",
-                border: "1px solid rgba(0,0,0,0.06)",
-                boxShadow: "0 4px 14px rgba(0,0,0,0.04)",
-              }}
-            >
-              {organizer.cover_url && (
-                <div style={{ height: "100px", width: "100%", overflow: "hidden" }}>
-                  <img src={organizer.cover_url} alt="Cover" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                </div>
-              )}
-
-              <div style={{ padding: "18px 20px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-                  {organizer.logo_url ? (
-                    <img src={organizer.logo_url} alt="Logo" style={{ width: "48px", height: "48px", borderRadius: "50%", objectFit: "cover", border: "2px solid #fff", boxShadow: "0 2px 6px rgba(0,0,0,0.1)" }} />
-                  ) : (
-                    <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: organizer.accent_color, color: "#fff", display: "grid", placeItems: "center", fontWeight: 700, fontSize: "18px" }}>
-                      {(organizer.name || "A")[0].toUpperCase()}
+            {/* View 1: Form Registrasi Tamu */}
+            {previewTab === "register" && (
+              <div style={{ maxWidth: "560px", margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: "16px" }}>
+                {/* Event Card with Cover */}
+                <div
+                  style={{
+                    background: isDark ? "#1e293b" : "#ffffff",
+                    borderRadius: "14px",
+                    overflow: "hidden",
+                    border: isDark ? "1px solid #334155" : "1px solid rgba(0,0,0,0.08)",
+                    boxShadow: "0 4px 14px rgba(0,0,0,0.04)",
+                  }}
+                >
+                  {displayCover && (
+                    <div style={{ height: "130px", width: "100%", overflow: "hidden", position: "relative" }}>
+                      <img src={displayCover} alt="Cover Acara" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      <div
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          background: isDark
+                            ? "linear-gradient(to top, #1e293b 0%, rgba(30,41,59,0.7) 30%, transparent 80%)"
+                            : "linear-gradient(to top, #ffffff 0%, rgba(255,255,255,0.7) 30%, transparent 80%)",
+                        }}
+                      />
                     </div>
                   )}
 
-                  <div>
-                    <h2 style={{ fontSize: "19px", fontWeight: 700, margin: 0, color: organizer.color_mode === "dark" ? "#f8fafc" : "#0f172a" }}>
-                      {organizer.name || "art smiot"}
-                    </h2>
-                    {organizer.bio && (
-                      <p style={{ margin: "2px 0 0", fontSize: "11.5px", color: organizer.color_mode === "dark" ? "#94a3b8" : "#64748b" }}>
-                        {organizer.bio}
-                      </p>
-                    )}
+                  <div style={{ padding: "18px 20px", marginTop: displayCover ? "-18px" : "0", position: "relative", zIndex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+                      {organizer.logo_url ? (
+                        <img
+                          src={organizer.logo_url}
+                          alt="Logo"
+                          style={{ width: "36px", height: "36px", borderRadius: "50%", objectFit: "cover", border: "2px solid #fff" }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: "36px",
+                            height: "36px",
+                            borderRadius: "10px",
+                            background: organizer.accent_color,
+                            color: "#fff",
+                            display: "grid",
+                            placeItems: "center",
+                            fontWeight: 700,
+                            fontSize: "14px",
+                          }}
+                        >
+                          {(organizer.name || "A")[0].toUpperCase()}
+                        </div>
+                      )}
+                      <div>
+                        <div style={{ fontSize: "11px", color: isDark ? "#94a3b8" : "#64748b", fontWeight: 600 }}>
+                          {organizer.name || "Penyelenggara Resmi"}
+                        </div>
+                        <h2 style={{ fontSize: "17px", fontWeight: 700, margin: 0, color: isDark ? "#f8fafc" : "#0f172a" }}>
+                          {displayTitle}
+                        </h2>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", borderTop: isDark ? "1px solid #334155" : "1px solid #f1f5f9", paddingTop: "10px", fontSize: "11.5px", color: isDark ? "#cbd5e1" : "#475569" }}>
+                      <div>📅 {displayDate} · {displayTime}</div>
+                      <div>📍 {displayLocation}</div>
+                    </div>
                   </div>
                 </div>
 
-                <button
+                {/* Registration Form Card */}
+                <div
                   style={{
-                    background: organizer.accent_color || "#8b5cf6",
-                    color: "#ffffff",
-                    border: "none",
-                    borderRadius: "8px",
-                    padding: "7px 14px",
-                    fontSize: "12px",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "6px",
+                    background: isDark ? "#1e293b" : "#ffffff",
+                    borderRadius: "14px",
+                    padding: "20px",
+                    border: isDark ? "1px solid #334155" : "1px solid rgba(0,0,0,0.08)",
+                    boxShadow: "0 4px 14px rgba(0,0,0,0.04)",
                   }}
                 >
-                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="2" y="4" width="20" height="16" rx="2" />
-                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                  </svg>
-                  <span>Contact</span>
-                </button>
-              </div>
-            </div>
+                  <div style={{ borderBottom: isDark ? "1px solid #334155" : "1px solid #f1f5f9", paddingBottom: "10px", marginBottom: "14px" }}>
+                    <h3 style={{ fontSize: "15px", fontWeight: 700, margin: "0 0 2px", color: isDark ? "#f8fafc" : "#0f172a" }}>
+                      Formulir Registrasi Tamu
+                    </h3>
+                    <p style={{ margin: 0, fontSize: "11.5px", color: isDark ? "#94a3b8" : "#64748b" }}>
+                      Isi data Anda untuk menerima E-Ticket resmi secara instan.
+                    </p>
+                  </div>
 
-            {/* Upcoming Events Card */}
-            <div
-              style={{
-                background: organizer.color_mode === "dark" ? "#1e293b" : "#ffffff",
-                borderRadius: "14px",
-                padding: "18px 20px",
-                border: "1px solid rgba(0,0,0,0.06)",
-                boxShadow: "0 4px 14px rgba(0,0,0,0.04)",
-                flex: 1,
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-                <h3 style={{ fontSize: "15px", fontWeight: 700, margin: 0, color: organizer.color_mode === "dark" ? "#f8fafc" : "#0f172a" }}>
-                  Upcoming Events
-                </h3>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                    <div>
+                      <label style={{ fontSize: "11px", fontWeight: 600, color: isDark ? "#cbd5e1" : "#475569", display: "block", marginBottom: "4px" }}>
+                        Nama Lengkap Tamu
+                      </label>
+                      <input
+                        type="text"
+                        readOnly
+                        value="Dimas Pratama"
+                        style={{
+                          width: "100%",
+                          padding: "8px 12px",
+                          borderRadius: "8px",
+                          border: isDark ? "1px solid #475569" : "1px solid #cbd5e1",
+                          background: isDark ? "#0f172a" : "#f8fafc",
+                          color: isDark ? "#f8fafc" : "#0f172a",
+                          fontSize: "12px",
+                          boxSizing: "border-box",
+                        }}
+                      />
+                    </div>
 
-                {/* Tabs [Upcoming] [Past] */}
-                <div style={{ display: "flex", background: organizer.color_mode === "dark" ? "#0f172a" : "#f1f5f9", padding: "2px", borderRadius: "6px" }}>
-                  <button
-                    type="button"
-                    onClick={() => setPreviewTab("upcoming")}
-                    style={{
-                      background: previewTab === "upcoming" ? (organizer.accent_color || "#8b5cf6") : "transparent",
-                      color: previewTab === "upcoming" ? "#ffffff" : "inherit",
-                      border: "none",
-                      borderRadius: "5px",
-                      padding: "4px 10px",
-                      fontSize: "11px",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                    }}
-                  >
-                    Upcoming
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPreviewTab("past")}
-                    style={{
-                      background: previewTab === "past" ? (organizer.accent_color || "#8b5cf6") : "transparent",
-                      color: previewTab === "past" ? "#ffffff" : "inherit",
-                      border: "none",
-                      borderRadius: "5px",
-                      padding: "4px 10px",
-                      fontSize: "11px",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                    }}
-                  >
-                    Past
-                  </button>
-                </div>
-              </div>
+                    <div>
+                      <label style={{ fontSize: "11px", fontWeight: 600, color: isDark ? "#cbd5e1" : "#475569", display: "block", marginBottom: "4px" }}>
+                        Nomor WhatsApp
+                      </label>
+                      <input
+                        type="text"
+                        readOnly
+                        value="0812-3456-7890"
+                        style={{
+                          width: "100%",
+                          padding: "8px 12px",
+                          borderRadius: "8px",
+                          border: isDark ? "1px solid #475569" : "1px solid #cbd5e1",
+                          background: isDark ? "#0f172a" : "#f8fafc",
+                          color: isDark ? "#f8fafc" : "#0f172a",
+                          fontSize: "12px",
+                          boxSizing: "border-box",
+                        }}
+                      />
+                    </div>
 
-              {events.length === 0 ? (
-                <div style={{ padding: "40px 0", textAlign: "center", color: organizer.color_mode === "dark" ? "#64748b" : "#94a3b8", fontSize: "13px" }}>
-                  No upcoming events
-                </div>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                  {events.map((ev) => (
-                    <div
-                      key={ev.id}
+                    <button
+                      type="button"
                       style={{
-                        padding: "12px 14px",
-                        borderRadius: "10px",
-                        border: "1px solid rgba(0,0,0,0.06)",
-                        background: organizer.color_mode === "dark" ? "#0f172a" : "#f8fafc",
+                        marginTop: "6px",
+                        padding: "10px",
+                        borderRadius: "8px",
+                        border: "none",
+                        background: organizer.accent_color || "#8b5cf6",
+                        color: "#ffffff",
+                        fontSize: "13px",
+                        fontWeight: 700,
+                        cursor: "pointer",
                         display: "flex",
                         alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: "10px",
+                        justifyContent: "center",
+                        gap: "6px",
+                        boxShadow: `0 4px 12px ${organizer.accent_color}40`,
                       }}
                     >
-                      <div>
-                        <div style={{ fontSize: "13px", fontWeight: 700, color: organizer.color_mode === "dark" ? "#f8fafc" : "#0f172a" }}>
-                          {ev.title}
-                        </div>
-                        <div style={{ fontSize: "11px", color: organizer.color_mode === "dark" ? "#94a3b8" : "#64748b", marginTop: "2px" }}>
-                          {ev.date} {ev.location ? `· ${ev.location}` : ""}
+                      <span>Dapatkan E-Ticket QR Resmi</span>
+                      <span>→</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* View 2: E-Ticket Tamu */}
+            {previewTab === "ticket" && (
+              <div style={{ maxWidth: "460px", margin: "0 auto", width: "100%" }}>
+                {/* Boarding-Pass Style Ticket Card */}
+                <div
+                  style={{
+                    background: isDark ? "#1e293b" : "#ffffff",
+                    borderRadius: "16px",
+                    overflow: "hidden",
+                    border: isDark ? "1px solid #334155" : "1px solid rgba(0,0,0,0.08)",
+                    boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
+                  }}
+                >
+                  {/* Top Color Accent Bar */}
+                  <div style={{ height: "5px", background: organizer.accent_color, width: "100%" }} />
+
+                  {/* Top Ticket Details */}
+                  <div style={{ padding: "20px 22px 16px" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        {organizer.logo_url ? (
+                          <img
+                            src={organizer.logo_url}
+                            alt="Logo"
+                            style={{ width: "32px", height: "32px", borderRadius: "50%", objectFit: "cover" }}
+                          />
+                        ) : (
+                          <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: organizer.accent_color, color: "#fff", display: "grid", placeItems: "center", fontWeight: 700, fontSize: "13px" }}>
+                            {(organizer.name || "A")[0].toUpperCase()}
+                          </div>
+                        )}
+                        <div>
+                          <div style={{ fontSize: "10.5px", color: isDark ? "#94a3b8" : "#64748b", fontWeight: 600 }}>
+                            {organizer.name || "Grand Opening Committee"}
+                          </div>
+                          <div style={{ fontSize: "14px", fontWeight: 700, color: isDark ? "#f8fafc" : "#0f172a" }}>
+                            {displayTitle}
+                          </div>
                         </div>
                       </div>
 
-                      <a
-                        href={`/e/${ev.slug}`}
-                        target="_blank"
-                        rel="noreferrer"
+                      <span
                         style={{
-                          background: organizer.accent_color,
-                          color: "#fff",
-                          padding: "5px 10px",
-                          borderRadius: "6px",
-                          fontSize: "11px",
-                          fontWeight: 600,
-                          textDecoration: "none",
-                          shrink: 0,
+                          fontSize: "10px",
+                          fontWeight: 700,
+                          padding: "3px 8px",
+                          borderRadius: "20px",
+                          background: `${organizer.accent_color}20`,
+                          color: organizer.accent_color,
                         }}
                       >
-                        Daftar
-                      </a>
+                        VIP PASS
+                      </span>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
 
-            {/* Footer preview */}
-            <div style={{ textAlign: "center", fontSize: "10px", color: organizer.color_mode === "dark" ? "#64748b" : "#94a3b8", marginTop: "auto" }}>
-              <span>Privacy Policy · Terms of Service</span>
-              <div style={{ marginTop: "3px" }}>Planning an event? Try QR Check-in</div>
-            </div>
+                    <div style={{ borderTop: isDark ? "1px solid #334155" : "1px solid #f1f5f9", paddingTop: "10px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", fontSize: "11px" }}>
+                      <div>
+                        <div style={{ color: isDark ? "#94a3b8" : "#64748b" }}>Nama Tamu:</div>
+                        <div style={{ fontWeight: 700, color: isDark ? "#f8fafc" : "#0f172a" }}>Dimas Pratama</div>
+                      </div>
+                      <div>
+                        <div style={{ color: isDark ? "#94a3b8" : "#64748b" }}>Waktu & Lokasi:</div>
+                        <div style={{ fontWeight: 700, color: isDark ? "#f8fafc" : "#0f172a" }}>{displayDate}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Perforated Divider Line with Cutouts */}
+                  <div style={{ position: "relative", display: "flex", alignItems: "center", margin: "4px 0" }}>
+                    <div
+                      style={{
+                        width: "16px",
+                        height: "16px",
+                        borderRadius: "50%",
+                        background: organizer.bg_color || "#f8fafc",
+                        marginLeft: "-8px",
+                      }}
+                    />
+                    <div style={{ flex: 1, borderTop: isDark ? "2px dashed #475569" : "2px dashed #cbd5e1" }} />
+                    <div
+                      style={{
+                        width: "16px",
+                        height: "16px",
+                        borderRadius: "50%",
+                        background: organizer.bg_color || "#f8fafc",
+                        marginRight: "-8px",
+                      }}
+                    />
+                  </div>
+
+                  {/* QR Code Section */}
+                  <div style={{ padding: "16px 22px 22px", textAlign: "center" }}>
+                    <div
+                      style={{
+                        display: "inline-block",
+                        padding: "12px",
+                        background: "#ffffff",
+                        borderRadius: "12px",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+                        border: `2px solid ${organizer.accent_color}40`,
+                      }}
+                    >
+                      <QRCodeSVG value="TICKET-DEMO-VIP-2026" size={130} />
+                    </div>
+
+                    <div style={{ marginTop: "10px", fontSize: "11px", fontWeight: 700, letterSpacing: "1px", color: organizer.accent_color }}>
+                      #TKT-VIP-88912
+                    </div>
+
+                    <p style={{ margin: "8px 0 0", fontSize: "11px", color: isDark ? "#94a3b8" : "#64748b", lineHeight: 1.4 }}>
+                      {organizer.email_template}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

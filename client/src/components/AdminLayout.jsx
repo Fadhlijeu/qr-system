@@ -72,11 +72,10 @@ export function AdminLayout({
     },
     {
       id: "design",
-      label: "Desain Halaman",
+      label: "Desain Tampilan Tamu",
       icon: (
         <svg viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="10" />
-          <path d="m4.93 4.93 4.24 4.24M14.83 9.17l4.24-4.24M14.83 14.83l4.24 4.24M9.17 14.83l-4.24 4.24" />
+          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
         </svg>
       )
     },

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 
-export function TicketCard({ ticket, event }) {
+export function TicketCard({ ticket, event, theme }) {
   const [copied, setCopied] = useState(false);
 
   const ticketUrl = `${window.location.origin}/t/${ticket.ticket_code}`;
@@ -39,6 +39,7 @@ export function TicketCard({ ticket, event }) {
   };
 
   const isCheckedIn = Boolean(ticket.checked_in);
+  const coverImage = event?.image_url || theme?.cover_url;
 
   return (
     <div style={{ maxWidth: "760px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -55,10 +56,10 @@ export function TicketCard({ ticket, event }) {
         }}
       >
         {/* Top 4px Solid Accent Line */}
-        <div style={{ height: "4px", background: "linear-gradient(90deg, var(--primary), var(--purple))", width: "100%" }} />
+        <div style={{ height: "4px", background: theme?.accent_color || "linear-gradient(90deg, var(--primary), var(--purple))", width: "100%" }} />
 
         {/* Optional Event Image with full ratio & gradient fadeout */}
-        {event?.image_url && (
+        {coverImage && (
           <div
             style={{
               position: "relative",
@@ -71,7 +72,7 @@ export function TicketCard({ ticket, event }) {
             }}
           >
             <img
-              src={event.image_url}
+              src={coverImage}
               alt={event?.title || "Gambar acara"}
               style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }}
             />
@@ -96,18 +97,27 @@ export function TicketCard({ ticket, event }) {
             justifyContent: "space-between",
             gap: "16px",
             flexWrap: "wrap",
-            marginTop: event?.image_url ? "-20px" : "0",
+            marginTop: coverImage ? "-20px" : "0",
             position: "relative",
             zIndex: 1,
           }}
         >
-          <div>
-            <span className="eyebrow" style={{ color: "var(--primary)", display: "block", marginBottom: "4px" }}>
-              E-Ticket Acara
-            </span>
-            <h2 style={{ fontSize: "24px", fontWeight: 700, margin: 0, color: "var(--t-base)", letterSpacing: "-0.02em" }}>
-              {event?.title || "-"}
-            </h2>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            {theme?.logo_url && (
+              <img
+                src={theme.logo_url}
+                alt="Logo"
+                style={{ width: "42px", height: "42px", borderRadius: "50%", objectFit: "cover", border: "2px solid #fff", boxShadow: "0 2px 6px rgba(0,0,0,0.1)" }}
+              />
+            )}
+            <div>
+              <span className="eyebrow" style={{ color: theme?.accent_color || "var(--primary)", display: "block", marginBottom: "4px" }}>
+                {theme?.name ? `${theme.name} · E-Ticket Tamu` : "E-Ticket Acara Resmi"}
+              </span>
+              <h2 style={{ fontSize: "24px", fontWeight: 700, margin: 0, color: "var(--t-base)", letterSpacing: "-0.02em" }}>
+                {event?.title || "-"}
+              </h2>
+            </div>
           </div>
 
           <div>
@@ -205,7 +215,7 @@ export function TicketCard({ ticket, event }) {
             </div>
 
             <div style={{ borderTop: "1px solid var(--border-soft)", paddingTop: "16px", marginTop: "auto", fontSize: "12px", color: "var(--t-muted)", lineHeight: 1.5 }}>
-              Tunjukkan QR Code pada tiket ini kepada panitia di pintu masuk saat kedatangan untuk validasi otomatis.
+              {theme?.email_template || "Tunjukkan QR Code pada tiket ini kepada panitia di pintu masuk saat kedatangan untuk validasi otomatis."}
             </div>
           </div>
 
@@ -229,7 +239,7 @@ export function TicketCard({ ticket, event }) {
                 padding: "10px",
                 background: "#ffffff",
                 borderRadius: "12px",
-                border: "1px solid var(--border)",
+                border: theme?.accent_color ? `2px solid ${theme.accent_color}40` : "1px solid var(--border)",
                 boxShadow: "var(--shadow-sm)"
               }}
             >

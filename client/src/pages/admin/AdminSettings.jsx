@@ -77,14 +77,9 @@ export function AdminSettings({ onNavigateToLocations }) {
   const navMenuItems = [
     { id: "basic", label: "Basic Information", icon: "ⓘ" },
     { id: "defaults", label: "Event Defaults", icon: "📅" },
-    { id: "payouts", label: "Payouts", icon: "💲" },
-    { id: "fees", label: "Platform Fees", icon: "％" },
-    { id: "locations", label: "Address", icon: "📍", isAction: true },
+    { id: "locations", label: "Address (Saved Venues)", icon: "📍", isAction: true },
     { id: "social", label: "Social Links", icon: "🔗" },
-    { id: "seo", label: "SEO", icon: "📈" },
     { id: "emails", label: "Email Templates", icon: "✉" },
-    { id: "analytics", label: "Tracking & Analytics", icon: "📊" },
-    { id: "danger", label: "Danger Zone", icon: "⚠", isDanger: true },
   ];
 
   return (
@@ -99,7 +94,7 @@ export function AdminSettings({ onNavigateToLocations }) {
 
       {/* Split Menu matching Hi.Events Screenshot 5 */}
       <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: "24px", alignItems: "start" }}>
-        {/* Left Sub-nav Sidebar matching Screenshot 5 */}
+        {/* Left Sub-nav Sidebar */}
         <div
           className="card"
           style={{
@@ -136,12 +131,8 @@ export function AdminSettings({ onNavigateToLocations }) {
                   textAlign: "left",
                   cursor: "pointer",
                   transition: "background .15s, color .15s",
-                  background: item.isDanger
-                    ? (isActive ? "#fee2e2" : "#fef2f2")
-                    : (isActive ? "var(--primary-soft)" : "transparent"),
-                  color: item.isDanger
-                    ? "#dc2626"
-                    : (isActive ? "var(--primary)" : "var(--t-base)"),
+                  background: isActive ? "var(--primary-soft)" : "transparent",
+                  color: isActive ? "var(--primary)" : "var(--t-base)",
                 }}
               >
                 <span style={{ fontSize: "14px", shrink: 0 }}>{item.icon}</span>
@@ -247,24 +238,7 @@ export function AdminSettings({ onNavigateToLocations }) {
                 </>
               )}
 
-              {/* Section 3 & 4: Payouts & Fees */}
-              {(activeSection === "payouts" || activeSection === "fees") && (
-                <>
-                  <div>
-                    <h3 style={{ fontSize: "16px", fontWeight: 700, margin: "0 0 4px", color: "var(--t-base)" }}>
-                      {activeSection === "payouts" ? "Payouts & Rekening" : "Biaya Platform"}
-                    </h3>
-                    <p style={{ fontSize: "12.5px", color: "var(--t-muted)", margin: 0 }}>
-                      Sistem ini saat ini difokuskan untuk tiket undangan VIP & Grand Opening non-berbayar (Free Admission).
-                    </p>
-                  </div>
-                  <div style={{ padding: "16px", background: "var(--bg-muted)", borderRadius: "10px", fontSize: "13px", color: "var(--t-base)" }}>
-                    ✓ Semua tiket, pendaftaran tamu, dan QR scanner aktif tanpa biaya transaksi (0% fee).
-                  </div>
-                </>
-              )}
-
-              {/* Section 5: Social Links */}
+              {/* Section 3: Social Links */}
               {activeSection === "social" && (
                 <>
                   <div>
@@ -311,43 +285,7 @@ export function AdminSettings({ onNavigateToLocations }) {
                 </>
               )}
 
-              {/* Section 6: SEO */}
-              {activeSection === "seo" && (
-                <>
-                  <div>
-                    <h3 style={{ fontSize: "16px", fontWeight: 700, margin: "0 0 4px", color: "var(--t-base)" }}>
-                      SEO & Meta Tags
-                    </h3>
-                    <p style={{ fontSize: "12.5px", color: "var(--t-muted)", margin: 0 }}>
-                      Optimasi mesin pencari dan pratinjau tautan ketika dibagikan ke WhatsApp / medsos.
-                    </p>
-                  </div>
-
-                  <div className="field">
-                    <label className="field-label">Meta Title</label>
-                    <input
-                      className="input"
-                      type="text"
-                      value={form.seo_title}
-                      onChange={(e) => setForm((prev) => ({ ...prev, seo_title: e.target.value }))}
-                      placeholder="Contoh: Portal Acara Resmi & E-Ticket - Art Smiot"
-                    />
-                  </div>
-
-                  <div className="field">
-                    <label className="field-label">Meta Description</label>
-                    <textarea
-                      className="textarea"
-                      rows={3}
-                      value={form.seo_description}
-                      onChange={(e) => setForm((prev) => ({ ...prev, seo_description: e.target.value }))}
-                      placeholder="Deskripsi singkat yang muncul di hasil pencarian Google..."
-                    />
-                  </div>
-                </>
-              )}
-
-              {/* Section 7: Email Templates */}
+              {/* Section 4: Email Templates */}
               {activeSection === "emails" && (
                 <>
                   <div>
@@ -372,86 +310,12 @@ export function AdminSettings({ onNavigateToLocations }) {
                 </>
               )}
 
-              {/* Section 8: Tracking & Analytics */}
-              {activeSection === "analytics" && (
-                <>
-                  <div>
-                    <h3 style={{ fontSize: "16px", fontWeight: 700, margin: "0 0 4px", color: "var(--t-base)" }}>
-                      Tracking & Analytics
-                    </h3>
-                    <p style={{ fontSize: "12.5px", color: "var(--t-muted)", margin: 0 }}>
-                      Integrasi kode pelacakan untuk memonitor kunjungan form pendaftaran tamu.
-                    </p>
-                  </div>
-
-                  <div className="field">
-                    <label className="field-label">Google Analytics Measurement ID (GA4)</label>
-                    <input
-                      className="input mono"
-                      type="text"
-                      value={form.google_analytics_id}
-                      onChange={(e) => setForm((prev) => ({ ...prev, google_analytics_id: e.target.value }))}
-                      placeholder="G-XXXXXXXXXX"
-                    />
-                  </div>
-
-                  <div className="field">
-                    <label className="field-label">Meta Pixel ID</label>
-                    <input
-                      className="input mono"
-                      type="text"
-                      value={form.meta_pixel_id}
-                      onChange={(e) => setForm((prev) => ({ ...prev, meta_pixel_id: e.target.value }))}
-                      placeholder="123456789012345"
-                    />
-                  </div>
-                </>
-              )}
-
-              {/* Section 9: Danger Zone */}
-              {activeSection === "danger" && (
-                <>
-                  <div>
-                    <h3 style={{ fontSize: "16px", fontWeight: 700, margin: "0 0 4px", color: "#dc2626" }}>
-                      Danger Zone
-                    </h3>
-                    <p style={{ fontSize: "12.5px", color: "var(--t-muted)", margin: 0 }}>
-                      Tindakan sensitif akun administrator.
-                    </p>
-                  </div>
-
-                  <div style={{ padding: "16px", border: "1px solid #fecaca", borderRadius: "10px", background: "#fef2f2" }}>
-                    <h4 style={{ fontSize: "14px", fontWeight: 700, margin: "0 0 4px", color: "#991b1b" }}>
-                      Keluar dari Sesi Panitia
-                    </h4>
-                    <p style={{ fontSize: "12px", color: "#7f1d1d", margin: "0 0 12px" }}>
-                      Menghapus token autentikasi dari browser Anda.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (window.confirm("Yakin ingin keluar dari akun admin?")) {
-                          localStorage.removeItem("admin_token");
-                          window.location.reload();
-                        }
-                      }}
-                      className="btn btn--sm"
-                      style={{ background: "#dc2626", color: "#fff" }}
-                    >
-                      Logout Sekarang
-                    </button>
-                  </div>
-                </>
-              )}
-
               {/* Submit Button */}
-              {activeSection !== "danger" && (
-                <div style={{ borderTop: "1px solid var(--border-soft)", paddingTop: "16px", display: "flex", justifyContent: "flex-end" }}>
-                  <button type="submit" disabled={saving} className="btn btn--primary">
-                    {saving ? "Menyimpan..." : saveSuccess ? "✓ Pengaturan Disimpan" : "Simpan Pengaturan"}
-                  </button>
-                </div>
-              )}
+              <div style={{ borderTop: "1px solid var(--border-soft)", paddingTop: "16px", display: "flex", justifyContent: "flex-end" }}>
+                <button type="submit" disabled={saving} className="btn btn--primary">
+                  {saving ? "Menyimpan..." : saveSuccess ? "✓ Pengaturan Disimpan" : "Simpan Pengaturan"}
+                </button>
+              </div>
             </form>
           )}
         </div>

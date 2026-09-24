@@ -4,6 +4,7 @@ import { TicketCard } from "../../components/TicketCard";
 
 export function GuestRegister({ slug = null }) {
   const [event, setEvent] = useState(null);
+  const [theme, setTheme] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -39,8 +40,14 @@ export function GuestRegister({ slug = null }) {
         targetSlug = first.slug;
       }
 
-      const data = await api.getPublicEvent(targetSlug);
+      const [data, orgData] = await Promise.all([
+        api.getPublicEvent(targetSlug),
+        api.getPublicOrganizer().catch(() => null),
+      ]);
       setEvent(data.event);
+      if (orgData?.organizer) {
+        setTheme(orgData.organizer);
+      }
     } catch (err) {
       setError(err.message || "Gagal memuat informasi acara.");
     } finally {
@@ -104,8 +111,17 @@ export function GuestRegister({ slug = null }) {
     );
   }
 
+  const coverImage = event?.image_url || theme?.cover_url;
+
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg-body)", padding: "40px 16px" }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: theme?.bg_color || "var(--bg-body)",
+        fontFamily: theme?.font_family ? `'${theme.font_family}', sans-serif` : "inherit",
+        padding: "40px 16px",
+      }}
+    >
       <div style={{ maxWidth: "680px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "20px" }}>
         {issuedTicket ? (
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
@@ -121,7 +137,7 @@ export function GuestRegister({ slug = null }) {
               </div>
             </div>
 
-            <TicketCard ticket={issuedTicket} event={event} />
+            <TicketCard ticket={issuedTicket} event={event} theme={theme} />
 
             <div style={{ textAlign: "center", paddingTop: "8px" }}>
               <button
@@ -140,7 +156,7 @@ export function GuestRegister({ slug = null }) {
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             {/* Event Summary Card */}
             <div className="card" style={{ padding: "0", overflow: "hidden", borderRadius: "16px" }}>
-              {event?.image_url && (
+              {coverImage && (
                 <div
                   style={{
                     position: "relative",
@@ -153,7 +169,7 @@ export function GuestRegister({ slug = null }) {
                   }}
                 >
                   <img
-                    src={event.image_url}
+                    src={coverImage}
                     alt={event?.title || "Gambar acara"}
                     style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }}
                   />
@@ -168,10 +184,26 @@ export function GuestRegister({ slug = null }) {
                 </div>
               )}
 
-              <div style={{ padding: "24px 28px", marginTop: event?.image_url ? "-24px" : "0", position: "relative", zIndex: 1 }}>
-                <h1 style={{ fontSize: "26px", fontWeight: 700, margin: "0 0 8px", color: "var(--t-base)", letterSpacing: "-0.02em" }}>
-                  {event?.title}
-                </h1>
+              <div style={{ padding: "24px 28px", marginTop: coverImage ? "-24px" : "0", position: "relative", zIndex: 1 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
+                  {theme?.logo_url && (
+                    <img
+                      src={theme.logo_url}
+                      alt="Logo"
+                      style={{ width: "44px", height: "44px", borderRadius: "50%", objectFit: "cover", border: "2px solid #fff", boxShadow: "0 2px 6px rgba(0,0,0,0.1)" }}
+                    />
+                  )}
+                  <div>
+                    {theme?.name && (
+                      <div style={{ fontSize: "12px", color: "var(--t-muted)", fontWeight: 600 }}>
+                        {theme.name}
+                      </div>
+                    )}
+                    <h1 style={{ fontSize: "26px", fontWeight: 700, margin: 0, color: "var(--t-base)", letterSpacing: "-0.02em" }}>
+                      {event?.title}
+                    </h1>
+                  </div>
+                </div>
 
                 {event?.description && (
                   <p style={{ color: "var(--t-muted)", fontSize: "13.5px", lineHeight: 1.6, margin: "0 0 16px" }}>
@@ -321,7 +353,13 @@ export function GuestRegister({ slug = null }) {
                     type="submit"
                     disabled={submitting}
                     className="btn btn--primary"
-                    style={{ width: "100%", justifyContent: "center", padding: "12px 18px", fontSize: "14px" }}
+                    style={{
+                      width: "100%",
+                      justifyContent: "center",
+                      padding: "12px 18px",
+                      fontSize: "14px",
+                      ...(theme?.accent_color ? { background: theme.accent_color, borderColor: theme.accent_color } : {}),
+                    }}
                   >
                     {submitting ? "Menerbitkan E-Ticket..." : "Daftar & Dapatkan E-Ticket"}
                   </button>
