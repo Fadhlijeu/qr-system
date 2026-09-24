@@ -7,13 +7,15 @@ import { AdminDashboard } from "./pages/admin/AdminDashboard";
 import { AdminParticipants } from "./pages/admin/AdminParticipants";
 import { AdminScanner } from "./pages/admin/AdminScanner";
 import { AdminEvents } from "./pages/admin/AdminEvents";
-import { Navbar } from "./components/Navbar";
+import { AdminLayout } from "./components/AdminLayout";
+import { Loader2 } from "lucide-react";
 
 export function App() {
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [adminUser, setAdminUser] = useState(null);
   const [activeAdminTab, setActiveAdminTab] = useState("dashboard");
   const [selectedEventId, setSelectedEventId] = useState(1);
+  const [currentEvent, setCurrentEvent] = useState(null);
   const [authChecking, setAuthChecking] = useState(true);
 
   // Listen to browser back/forward buttons
@@ -42,6 +44,18 @@ export function App() {
     checkAuth();
   }, []);
 
+  // Fetch current selected event details for layout context
+  useEffect(() => {
+    if (adminUser && selectedEventId) {
+      api
+        .getDashboard(selectedEventId)
+        .then((res) => {
+          if (res?.event) setCurrentEvent(res.event);
+        })
+        .catch(() => {});
+    }
+  }, [adminUser, selectedEventId]);
+
   // Parse path
   const path = currentPath.toLowerCase();
 
@@ -55,8 +69,9 @@ export function App() {
   if (path.startsWith("/admin")) {
     if (authChecking) {
       return (
-        <div className="min-h-screen flex items-center justify-center text-sm text-slate-400">
-          Memeriksa sesi login...
+        <div className="min-h-screen bg-[#0b0f19] flex items-center justify-center text-xs text-slate-400 gap-2">
+          <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />
+          <span>Memeriksa sesi login...</span>
         </div>
       );
     }
@@ -66,46 +81,42 @@ export function App() {
     }
 
     return (
-      <div className="min-h-screen flex flex-col bg-[#090d16]">
-        <div className="bg-mesh" />
-        <Navbar
-          activeTab={activeAdminTab}
-          setActiveTab={setActiveAdminTab}
-          admin={adminUser}
-          onLogout={() => setAdminUser(null)}
-        />
+      <AdminLayout
+        activeTab={activeAdminTab}
+        setActiveTab={setActiveAdminTab}
+        admin={adminUser}
+        onLogout={() => setAdminUser(null)}
+        currentEvent={currentEvent}
+      >
+        {activeAdminTab === "dashboard" && (
+          <AdminDashboard
+            eventId={selectedEventId}
+            onNavigateToScanner={() => setActiveAdminTab("scanner")}
+            onNavigateToParticipants={() => setActiveAdminTab("participants")}
+          />
+        )}
 
-        <main className="container py-6 flex-1 relative z-10">
-          {activeAdminTab === "dashboard" && (
-            <AdminDashboard
-              eventId={selectedEventId}
-              onNavigateToScanner={() => setActiveAdminTab("scanner")}
-              onNavigateToParticipants={() => setActiveAdminTab("participants")}
-            />
-          )}
+        {activeAdminTab === "participants" && (
+          <AdminParticipants eventId={selectedEventId} />
+        )}
 
-          {activeAdminTab === "participants" && (
-            <AdminParticipants eventId={selectedEventId} />
-          )}
+        {activeAdminTab === "scanner" && (
+          <AdminScanner
+            eventId={selectedEventId}
+            onCheckInComplete={() => {}}
+          />
+        )}
 
-          {activeAdminTab === "scanner" && (
-            <AdminScanner
-              eventId={selectedEventId}
-              onCheckInComplete={() => {}}
-            />
-          )}
-
-          {activeAdminTab === "events" && (
-            <AdminEvents
-              selectedEventId={selectedEventId}
-              onSelectEvent={(id) => {
-                setSelectedEventId(id);
-                setActiveAdminTab("dashboard");
-              }}
-            />
-          )}
-        </main>
-      </div>
+        {activeAdminTab === "events" && (
+          <AdminEvents
+            selectedEventId={selectedEventId}
+            onSelectEvent={(id) => {
+              setSelectedEventId(id);
+              setActiveAdminTab("dashboard");
+            }}
+          />
+        )}
+      </AdminLayout>
     );
   }
 

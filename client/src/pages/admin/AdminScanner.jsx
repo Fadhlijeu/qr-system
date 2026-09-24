@@ -1,7 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import { api } from "../../api";
-import { QrCode, Camera, CheckCircle2, AlertTriangle, XCircle, RefreshCw, Volume2, ArrowRight } from "lucide-react";
+import {
+  Camera,
+  CheckCircle2,
+  AlertTriangle,
+  XCircle,
+  RefreshCw,
+  ArrowRight,
+  History,
+  QrCode,
+  User,
+  Clock
+} from "lucide-react";
 
 // Web Audio API tone generator (zero external assets)
 function playBeep(type = "success") {
@@ -37,7 +48,7 @@ function playBeep(type = "success") {
       osc.stop(audioCtx.currentTime + 0.3);
     }
   } catch (e) {
-    // Ignore audio autoplay restrictions
+    // Ignore audio restrictions
   }
 }
 
@@ -47,7 +58,8 @@ export function AdminScanner({ eventId, onCheckInComplete }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState(null);
-  
+  const [sessionLogs, setSessionLogs] = useState([]);
+
   const scannerRef = useRef(null);
   const isProcessingRef = useRef(false);
 
@@ -74,7 +86,7 @@ export function AdminScanner({ eventId, onCheckInComplete }) {
 
       const config = {
         fps: 15,
-        qrbox: { width: 250, height: 250 },
+        qrbox: { width: 260, height: 260 },
         aspectRatio: 1.0,
       };
 
@@ -86,13 +98,15 @@ export function AdminScanner({ eventId, onCheckInComplete }) {
             handleCheckIn(decodedText);
           }
         },
-        () => {} // silent on frame without QR
+        () => {} // silent on frame
       );
 
       setCameraActive(true);
     } catch (err) {
       console.warn("Camera start warning:", err);
-      setCameraError("Kamera tidak dapat diakses atau diblokir oleh browser. Anda dapat menggunakan input kode manual di bawah.");
+      setCameraError(
+        "Kamera tidak dapat diakses atau izin ditolak. Anda dapat menggunakan input nomor tiket manual di bawah."
+      );
       setCameraActive(false);
     }
   };
@@ -122,20 +136,44 @@ export function AdminScanner({ eventId, onCheckInComplete }) {
         playBeep("error");
       }
 
+      // Add to session log
+      setSessionLogs((prev) => [
+        {
+          id: Date.now(),
+          status: res.status,
+          code: res.participant?.ticket_code || res.code || codeToVerify,
+          name: res.participant?.name || "Tidak Terdaftar",
+          time: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+        },
+        ...prev.slice(0, 4),
+      ]);
+
       if (onCheckInComplete) {
         onCheckInComplete();
       }
     } catch (err) {
       playBeep("error");
-      setScanResult({
+      const errRes = {
         status: "INVALID",
         message: err.message || "Gagal memverifikasi tiket.",
-      });
+        code: codeToVerify,
+      };
+      setScanResult(errRes);
+      setSessionLogs((prev) => [
+        {
+          id: Date.now(),
+          status: "INVALID",
+          code: codeToVerify,
+          name: "Gagal Verifikasi",
+          time: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+        },
+        ...prev.slice(0, 4),
+      ]);
     } finally {
-      // Auto-clear result after 3 seconds so camera is ready for next attendee
+      // Auto clear feedback after 3.5s so next scan is ready
       setTimeout(() => {
         setIsProcessing(false);
-      }, 2000);
+      }, 2500);
     }
   };
 
@@ -149,83 +187,92 @@ export function AdminScanner({ eventId, onCheckInComplete }) {
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
-      {/* Scanner Viewport Card */}
-      <div className="glass-card overflow-hidden border border-white/10">
-        <div className="p-4 border-b border-white/10 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Camera className="w-5 h-5 text-indigo-400" />
-            <h2 className="font-bold text-white text-base">QR Scanner Check-in</h2>
-          </div>
+      {/* Title */}
+      <div>
+        <h1 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+          <QrCode className="w-5 h-5 text-indigo-400" />
+          <span>Verifikasi Kehadiran Tamu</span>
+        </h1>
+        <p className="text-xs text-slate-400 mt-0.5">
+          Arahkan QR Code peserta ke kamera atau ketik nomor tiket manual
+        </p>
+      </div>
 
-          <div className="flex items-center gap-2">
-            {cameraActive ? (
-              <button
-                onClick={stopCamera}
-                className="text-xs text-rose-400 hover:text-rose-300 transition-colors"
-              >
-                Matikan Kamera
-              </button>
-            ) : (
-              <button
-                onClick={startCamera}
-                className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1"
-              >
-                <RefreshCw className="w-3.5 h-3.5" /> Nyalakan Kamera
-              </button>
-            )}
-          </div>
+      {/* Main Scanner Card */}
+      <div className="card-pro overflow-hidden border border-white/10">
+        <div className="p-3.5 border-b border-white/5 flex items-center justify-between bg-[#0e1424]">
+          <span className="text-xs font-semibold text-slate-300 flex items-center gap-2">
+            <Camera className="w-4 h-4 text-indigo-400" />
+            <span>Kamera Pemindai</span>
+          </span>
+
+          {cameraActive ? (
+            <button
+              onClick={stopCamera}
+              className="text-[11px] text-rose-400 hover:text-rose-300 font-medium"
+            >
+              Matikan Kamera
+            </button>
+          ) : (
+            <button
+              onClick={startCamera}
+              className="text-[11px] text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1"
+            >
+              <RefreshCw className="w-3 h-3" /> Hidupkan Kamera
+            </button>
+          )}
         </div>
 
-        {/* Live Camera View Area */}
-        <div className="p-4 bg-slate-950/60 flex flex-col items-center">
+        {/* Camera Viewport Area */}
+        <div className="p-6 bg-slate-950/80 flex flex-col items-center justify-center">
           <div
             id="qr-reader"
-            className="w-full max-w-[320px] rounded-xl overflow-hidden border-2 border-indigo-500/30 shadow-inner"
+            className="w-full max-w-[300px] rounded-xl overflow-hidden border-2 border-indigo-500/30 shadow-inner"
             style={{ minHeight: "260px" }}
-          ></div>
+          />
 
           {cameraError && (
-            <div className="mt-3 p-3 bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs rounded-xl max-w-md text-center">
+            <div className="mt-3 p-3 bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs rounded-lg max-w-sm text-center">
               {cameraError}
             </div>
           )}
 
           <p className="text-xs text-slate-400 mt-3 text-center">
-            Arahkan kamera ke QR Code peserta. Sistem akan memverifikasi otomatis dalam milidetik.
+            Posisikan QR tiket di tengah kotak pemindai
           </p>
         </div>
 
-        {/* Manual Barcode / Ticket Code Input */}
-        <div className="p-4 border-t border-white/10 bg-slate-900/50">
+        {/* Manual Input Fallback */}
+        <div className="p-4 border-t border-white/5 bg-[#0e1424]">
           <form onSubmit={handleManualSubmit} className="flex gap-2">
             <input
               type="text"
-              placeholder="Atau ketik / scan nomor tiket (contoh: TKT-SUQG44)..."
+              placeholder="Atau ketik nomor tiket (contoh: TKT-7K9M2P)..."
               value={manualCode}
               onChange={(e) => setManualCode(e.target.value)}
-              className="input-field text-sm font-mono uppercase"
+              className="input-field text-xs font-mono uppercase"
             />
             <button
               type="submit"
               disabled={!manualCode.trim() || isProcessing}
-              className="btn-primary text-sm whitespace-nowrap px-4"
+              className="btn-primary text-xs px-4 whitespace-nowrap flex items-center gap-1.5"
             >
               <span>Verifikasi</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </form>
         </div>
       </div>
 
-      {/* Real-time Verification Feedback Modal / Banner */}
+      {/* Prominent Verification Feedback Result */}
       {scanResult && (
         <div
-          className={`p-5 rounded-2xl border transition-all animate-in fade-in zoom-in-95 duration-200 ${
+          className={`card-pro p-5 border transition-all animate-in zoom-in-95 duration-150 ${
             scanResult.status === "SUCCESS"
-              ? "bg-emerald-950/80 border-emerald-500/40 text-emerald-200"
+              ? "bg-emerald-950/50 border-emerald-500/50 text-emerald-200"
               : scanResult.status === "ALREADY_CHECKED_IN"
-              ? "bg-amber-950/80 border-amber-500/40 text-amber-200"
-              : "bg-rose-950/80 border-rose-500/40 text-rose-200"
+              ? "bg-amber-950/50 border-amber-500/50 text-amber-200"
+              : "bg-rose-950/50 border-rose-500/50 text-rose-200"
           }`}
         >
           <div className="flex items-start gap-4">
@@ -239,47 +286,87 @@ export function AdminScanner({ eventId, onCheckInComplete }) {
               <XCircle className="w-8 h-8 text-rose-400 shrink-0 mt-0.5" />
             )}
 
-            <div className="flex-1 space-y-1">
+            <div className="flex-1 space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="font-extrabold tracking-wide uppercase text-sm">
-                  {scanResult.status === "SUCCESS" && "CHECK-IN SUCCESS ✅"}
-                  {scanResult.status === "ALREADY_CHECKED_IN" && "ALREADY CHECKED IN ⚠️"}
-                  {scanResult.status === "INVALID" && "INVALID QR ❌"}
+                <span className="font-extrabold text-sm uppercase tracking-wide">
+                  {scanResult.status === "SUCCESS" && "CHECK-IN BERHASIL"}
+                  {scanResult.status === "ALREADY_CHECKED_IN" && "SUDAH CHECK-IN SEBELUMNYA"}
+                  {scanResult.status === "INVALID" && "QR TIDAK VALID"}
                 </span>
-                <span className="text-xs opacity-75">
+                <span className="text-[11px] opacity-75 font-mono">
                   {new Date().toLocaleTimeString()}
                 </span>
               </div>
 
-              <p className="text-sm font-medium">{scanResult.message}</p>
+              <p className="text-xs">{scanResult.message}</p>
 
               {scanResult.participant && (
                 <div className="mt-3 pt-3 border-t border-white/10 grid grid-cols-2 gap-2 text-xs">
                   <div>
-                    <span className="opacity-75 block">Nama Peserta:</span>
+                    <span className="text-slate-400 block text-[11px]">Nama Peserta:</span>
                     <strong className="text-white text-sm">
                       {scanResult.participant.name}
                     </strong>
                   </div>
                   <div>
-                    <span className="opacity-75 block">Instansi:</span>
-                    <span className="text-slate-200">
+                    <span className="text-slate-400 block text-[11px]">Instansi:</span>
+                    <span className="text-slate-200 font-medium">
                       {scanResult.participant.organization}
                     </span>
                   </div>
                   <div>
-                    <span className="opacity-75 block">Nomor Tiket:</span>
-                    <span className="font-mono font-bold text-white">
+                    <span className="text-slate-400 block text-[11px]">Nomor Tiket:</span>
+                    <span className="font-mono font-bold text-indigo-300">
                       {scanResult.participant.ticket_code}
                     </span>
                   </div>
                   <div>
-                    <span className="opacity-75 block">Waktu Kehadiran:</span>
-                    <span>{scanResult.participant.checked_in_at || "Baru saja"}</span>
+                    <span className="text-slate-400 block text-[11px]">Waktu Check-in:</span>
+                    <span className="text-slate-200 font-mono">
+                      {scanResult.participant.checked_in_at?.substring(11, 16) || "Baru saja"} WIB
+                    </span>
                   </div>
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Session Scan Log */}
+      {sessionLogs.length > 0 && (
+        <div className="card-pro overflow-hidden">
+          <div className="p-3.5 border-b border-white/5 flex items-center justify-between text-xs text-slate-400 bg-[#0e1424]">
+            <span className="font-semibold flex items-center gap-1.5">
+              <History className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Log Scan Sesi Ini</span>
+            </span>
+            <span className="text-[11px]">{sessionLogs.length} scan terakhir</span>
+          </div>
+
+          <div className="divide-y divide-white/5">
+            {sessionLogs.map((log) => (
+              <div
+                key={log.id}
+                className="p-3 px-4 flex items-center justify-between text-xs"
+              >
+                <div className="flex items-center gap-2.5">
+                  {log.status === "SUCCESS" ? (
+                    <span className="badge badge-success text-[10px]">Hadir</span>
+                  ) : log.status === "ALREADY_CHECKED_IN" ? (
+                    <span className="badge badge-warning text-[10px]">Duplikat</span>
+                  ) : (
+                    <span className="badge badge-danger text-[10px]">Invalid</span>
+                  )}
+                  <span className="font-semibold text-white">{log.name}</span>
+                </div>
+
+                <div className="flex items-center gap-3 text-slate-400 font-mono text-[11px]">
+                  <span>{log.code}</span>
+                  <span>{log.time}</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

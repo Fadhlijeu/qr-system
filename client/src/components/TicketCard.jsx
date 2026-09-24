@@ -1,15 +1,33 @@
-import React, { useRef } from "react";
+import React, { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { Calendar, Clock, MapPin, Building2, User, Ticket, Download, Printer, CheckCircle } from "lucide-react";
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  Building2,
+  User,
+  Ticket,
+  Download,
+  Printer,
+  Copy,
+  Check,
+  CheckCircle,
+  AlertCircle
+} from "lucide-react";
 
-export function TicketCard({ ticket, event, onDownload }) {
-  const ticketRef = useRef(null);
+export function TicketCard({ ticket, event }) {
+  const [copied, setCopied] = useState(false);
 
-  // Encode the direct link to the ticket in the QR code
   const ticketUrl = `${window.location.origin}/t/${ticket.ticket_code}`;
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(ticketUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleDownloadQR = () => {
@@ -20,14 +38,14 @@ export function TicketCard({ ticket, event, onDownload }) {
     const ctx = canvas.getContext("2d");
     const img = new Image();
     img.onload = () => {
-      canvas.width = img.width + 40;
-      canvas.height = img.height + 40;
+      canvas.width = img.width + 48;
+      canvas.height = img.height + 48;
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 20, 20);
+      ctx.drawImage(img, 24, 24);
       const pngFile = canvas.toDataURL("image/png");
       const downloadLink = document.createElement("a");
-      downloadLink.download = `QR_${ticket.ticket_code}.png`;
+      downloadLink.download = `Tiket_${ticket.ticket_code}.png`;
       downloadLink.href = pngFile;
       downloadLink.click();
     };
@@ -35,39 +53,72 @@ export function TicketCard({ ticket, event, onDownload }) {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto">
-      {/* Ticket Container */}
-      <div
-        ref={ticketRef}
-        className="glass-card relative overflow-hidden border border-white/10 shadow-2xl bg-gradient-to-b from-slate-900/90 to-slate-950/95 rounded-2xl"
-      >
-        {/* Top Header Badge */}
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 text-white text-center relative">
-          <div className="flex items-center justify-center gap-1.5 mb-1">
-            <Ticket className="w-4 h-4" />
-            <span className="text-xs uppercase font-bold tracking-widest opacity-90">Official E-Ticket</span>
+    <div className="w-full max-w-md mx-auto space-y-4">
+      {/* Boarding Pass Ticket */}
+      <div className="ticket-boarding-pass border border-white/10 bg-[#111827] shadow-2xl">
+        {/* 1. Event Header */}
+        <div className="p-5 border-b border-white/10 bg-gradient-to-r from-indigo-950/80 via-slate-900 to-slate-900">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] uppercase font-bold tracking-widest text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+              Official E-Ticket
+            </span>
+            <Ticket className="w-4 h-4 text-indigo-400 opacity-80" />
           </div>
-          <h2 className="text-xl font-bold tracking-tight">{event.title}</h2>
+          <h2 className="text-xl font-bold text-white tracking-tight leading-tight">
+            {event?.title || "Acara Resmi"}
+          </h2>
         </div>
 
-        {/* Event Quick Details */}
-        <div className="p-5 border-b border-dashed border-white/10 space-y-2 text-sm text-slate-300">
-          <div className="flex items-center gap-2.5">
-            <Calendar className="w-4 h-4 text-indigo-400 shrink-0" />
-            <span className="font-medium text-white">{event.date}</span>
-            {event.time && <span className="text-slate-400">({event.time})</span>}
-          </div>
-          {event.location && (
-            <div className="flex items-start gap-2.5">
-              <MapPin className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
-              <span className="text-slate-300">{event.location}</span>
+        {/* 2. Attendee & Event Metadata */}
+        <div className="p-5 space-y-4 bg-[#111827]">
+          {/* Attendee */}
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+              Nama Peserta
+            </span>
+            <div className="text-base font-extrabold text-white">
+              {ticket.name}
             </div>
-          )}
+            {ticket.organization && (
+              <div className="text-xs text-indigo-300 font-medium mt-0.5">
+                {ticket.organization}
+              </div>
+            )}
+          </div>
+
+          {/* Date, Time, Location Grid */}
+          <div className="grid grid-cols-2 gap-3 pt-2 border-t border-white/5 text-xs text-slate-300">
+            <div>
+              <span className="text-[10px] uppercase font-semibold text-slate-400 block">
+                Tanggal & Waktu
+              </span>
+              <span className="font-semibold text-white block mt-0.5">
+                {event?.date || "-"}
+              </span>
+              {event?.time && (
+                <span className="text-slate-400 text-[11px] block">
+                  {event.time}
+                </span>
+              )}
+            </div>
+
+            <div>
+              <span className="text-[10px] uppercase font-semibold text-slate-400 block">
+                Lokasi Acara
+              </span>
+              <span className="font-semibold text-white block mt-0.5 truncate">
+                {event?.location || "Diumumkan panitia"}
+              </span>
+            </div>
+          </div>
         </div>
 
-        {/* QR Code Section */}
-        <div className="p-6 text-center bg-slate-950/40 flex flex-col items-center justify-center">
-          <div className="p-3 bg-white rounded-xl shadow-xl border-2 border-indigo-500/30 inline-block mb-3">
+        {/* 3. Perforated Notch Divider */}
+        <div className="ticket-notch-divider" />
+
+        {/* 4. Large QR Code Section */}
+        <div className="p-6 text-center bg-slate-950/60 flex flex-col items-center justify-center">
+          <div className="p-3.5 bg-white rounded-2xl shadow-xl inline-block mb-3 border-4 border-slate-900">
             <QRCodeSVG
               id="ticket-qr-svg"
               value={ticket.ticket_code}
@@ -76,64 +127,63 @@ export function TicketCard({ ticket, event, onDownload }) {
               includeMargin={false}
             />
           </div>
-          <div className="font-mono text-sm tracking-widest font-bold text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20">
+
+          <div className="font-mono text-base tracking-widest font-black text-indigo-300 bg-indigo-500/10 px-4 py-1 rounded-full border border-indigo-500/25">
             {ticket.ticket_code}
           </div>
-          <p className="text-xs text-slate-400 mt-2">
-            Tunjukkan kode QR ini kepada petugas di meja registrasi
-          </p>
-        </div>
 
-        {/* Perforated Stub Line with Circles */}
-        <div className="relative border-t border-dashed border-white/15 my-1">
-          <div className="absolute -left-3.5 -top-3.5 w-7 h-7 bg-[#090d16] rounded-full border-r border-white/10"></div>
-          <div className="absolute -right-3.5 -top-3.5 w-7 h-7 bg-[#090d16] rounded-full border-l border-white/10"></div>
-        </div>
-
-        {/* Participant Details Stub */}
-        <div className="p-5 space-y-2.5 text-sm bg-slate-900/50">
-          <div className="flex items-center justify-between">
-            <span className="text-slate-400 text-xs flex items-center gap-1.5">
-              <User className="w-3.5 h-3.5" /> Nama Peserta
-            </span>
-            <span className="font-semibold text-white">{ticket.name}</span>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span className="text-slate-400 text-xs flex items-center gap-1.5">
-              <Building2 className="w-3.5 h-3.5" /> Instansi / Organisasi
-            </span>
-            <span className="font-medium text-slate-200">{ticket.organization}</span>
-          </div>
-
-          <div className="flex items-center justify-between pt-1 border-t border-white/5 text-xs text-slate-400">
-            <span>Status:</span>
+          <div className="mt-3">
             {ticket.checked_in ? (
-              <span className="badge badge-success text-[11px] font-semibold flex items-center gap-1">
-                <CheckCircle className="w-3 h-3" /> Sudah Hadir ({ticket.checked_in_at?.substring(11, 16)})
+              <span className="badge badge-success text-xs font-semibold">
+                <CheckCircle className="w-3.5 h-3.5" /> Sudah Hadir ({ticket.checked_in_at?.substring(11, 16)})
               </span>
             ) : (
-              <span className="badge badge-warning text-[11px] font-semibold">
-                Siap Digunakan
+              <span className="badge badge-warning text-xs font-semibold">
+                ● Siap Digunakan
               </span>
             )}
           </div>
+
+          <p className="text-[11px] text-slate-400 max-w-xs mt-3 leading-relaxed">
+            Pastikan tiket ini disimpan dan ditunjukkan kepada panitia di pintu masuk acara.
+          </p>
         </div>
       </div>
 
-      {/* Action Buttons (Excluded from print) */}
-      <div className="no-print mt-4 flex items-center justify-center gap-3">
-        <button
-          onClick={handlePrint}
-          className="btn-secondary flex-1 text-sm py-2.5"
-        >
-          <Printer className="w-4 h-4" /> Cetak / PDF
-        </button>
+      {/* 5. Action Buttons (Excluded from print) */}
+      <div className="no-print flex flex-wrap items-center gap-2 pt-1">
         <button
           onClick={handleDownloadQR}
-          className="btn-primary flex-1 text-sm py-2.5"
+          className="btn-primary flex-1 text-xs py-2.5"
+          title="Simpan gambar QR Code ke galeri / perangkat"
         >
-          <Download className="w-4 h-4" /> Simpan QR
+          <Download className="w-3.5 h-3.5" />
+          <span>Simpan QR</span>
+        </button>
+
+        <button
+          onClick={handlePrint}
+          className="btn-secondary flex-1 text-xs py-2.5"
+          title="Cetak tiket atau simpan sebagai dokumen PDF"
+        >
+          <Printer className="w-3.5 h-3.5" />
+          <span>Cetak / PDF</span>
+        </button>
+
+        <button
+          onClick={handleCopyLink}
+          className="btn-secondary text-xs py-2.5 px-3"
+          title="Salin tautan tiket langsung"
+        >
+          {copied ? (
+            <span className="flex items-center gap-1 text-emerald-400">
+              <Check className="w-3.5 h-3.5" /> Tersalin
+            </span>
+          ) : (
+            <span className="flex items-center gap-1">
+              <Copy className="w-3.5 h-3.5" /> Link
+            </span>
+          )}
         </button>
       </div>
     </div>

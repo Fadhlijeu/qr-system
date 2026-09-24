@@ -1,6 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { api } from "../../api";
-import { Users, UserCheck, Clock, Percent, Copy, Check, ExternalLink, QrCode, ArrowUpRight } from "lucide-react";
+import {
+  Users,
+  UserCheck,
+  Clock,
+  Percent,
+  Copy,
+  Check,
+  ExternalLink,
+  QrCode,
+  ArrowRight,
+  MapPin,
+  Calendar,
+  Building2,
+  CheckCircle2
+} from "lucide-react";
 
 export function AdminDashboard({ eventId, onNavigateToScanner, onNavigateToParticipants }) {
   const [data, setData] = useState(null);
@@ -38,68 +52,110 @@ export function AdminDashboard({ eventId, onNavigateToScanner, onNavigateToParti
     setTimeout(() => setCopied(false), 2000);
   };
 
-  if (loading || !data) {
+  if (loading) {
     return (
-      <div className="py-12 text-center text-slate-400">
-        Memuat data dashboard...
+      <div className="space-y-6">
+        {/* Header Skeleton */}
+        <div className="card-pro p-6 space-y-4">
+          <div className="h-6 w-1/3 skeleton" />
+          <div className="h-4 w-1/2 skeleton" />
+        </div>
+        {/* Metric Cards Skeleton */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="card-pro p-5 space-y-3">
+              <div className="h-4 w-20 skeleton" />
+              <div className="h-8 w-14 skeleton" />
+            </div>
+          ))}
+        </div>
+        <div className="card-pro p-6 h-64 skeleton" />
       </div>
     );
   }
 
-  const { metrics, event, recent_checkins } = data;
+  if (!data?.event) {
+    return (
+      <div className="card-pro p-10 text-center space-y-3">
+        <p className="text-slate-400 text-sm">Acara tidak ditemukan.</p>
+      </div>
+    );
+  }
+
+  const { metrics, event, recent_checkins = [] } = data;
 
   return (
     <div className="space-y-6">
-      {/* Event Share Link Banner */}
-      <div className="glass-card p-4 md:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border border-indigo-500/20 bg-indigo-950/20">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="badge badge-success text-[10px]">Event Aktif</span>
-            <h2 className="font-bold text-white text-base">{event.title}</h2>
+      {/* 1. Header Banner */}
+      <div className="card-pro p-5 md:p-6 bg-gradient-to-r from-[#131b2e] via-[#111827] to-[#0f172a] border border-white/5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <span className="badge badge-success text-[10px]">
+                ● {event.status === "ACTIVE" ? "Acara Aktif" : "Selesai"}
+              </span>
+              <span className="text-xs text-indigo-400 font-mono">
+                /e/{event.slug}
+              </span>
+            </div>
+            <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">
+              {event.title}
+            </h1>
+            <div className="flex flex-wrap items-center gap-3 text-xs text-slate-300 pt-1">
+              <div className="flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                <span>{event.date} {event.time && `· ${event.time}`}</span>
+              </div>
+              {event.location && (
+                <div className="flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                  <span>{event.location}</span>
+                </div>
+              )}
+            </div>
           </div>
-          <p className="text-xs text-slate-300">
-            Link pendaftaran peserta: <code className="text-indigo-300 font-mono">{getPublicEventUrl()}</code>
-          </p>
-        </div>
 
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <button
-            onClick={handleCopyLink}
-            className="btn-secondary text-xs flex-1 md:flex-initial py-2 flex items-center justify-center gap-1.5"
-          >
-            {copied ? (
-              <>
-                <Check className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="text-emerald-400">Tersalin!</span>
-              </>
-            ) : (
-              <>
-                <Copy className="w-3.5 h-3.5" />
-                <span>Salin Link</span>
-              </>
-            )}
-          </button>
-          <a
-            href={`/e/${event.slug}`}
-            target="_blank"
-            rel="noreferrer"
-            className="btn-primary text-xs flex-1 md:flex-initial py-2 flex items-center justify-center gap-1.5"
-          >
-            <span>Buka Form</span>
-            <ExternalLink className="w-3.5 h-3.5" />
-          </a>
+          {/* Action Buttons: Copy Link & Open Event */}
+          <div className="flex items-center gap-2.5 shrink-0">
+            <button
+              onClick={handleCopyLink}
+              className="btn-secondary text-xs px-3.5 py-2 flex items-center gap-1.5"
+            >
+              {copied ? (
+                <>
+                  <Check className="w-4 h-4 text-emerald-400" />
+                  <span className="text-emerald-400 font-semibold">Tersalin!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4" />
+                  <span>Salin Link Pendaftaran</span>
+                </>
+              )}
+            </button>
+
+            <a
+              href={`/e/${event.slug}`}
+              target="_blank"
+              rel="noreferrer"
+              className="btn-primary text-xs px-3.5 py-2 flex items-center gap-1.5"
+            >
+              <span>Buka Form</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
         </div>
       </div>
 
-      {/* 4 Metric Cards */}
+      {/* 2. Four Attendance Metric Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Registered */}
-        <div className="glass-card p-5 space-y-2 border-white/10">
+        {/* Metric 1: Registered */}
+        <div className="card-pro p-5 space-y-2">
           <div className="flex items-center justify-between text-slate-400 text-xs">
-            <span>Total Terdaftar</span>
+            <span className="font-medium">Total Terdaftar</span>
             <Users className="w-4 h-4 text-indigo-400" />
           </div>
-          <div className="text-3xl font-extrabold text-white font-mono">
+          <div className="text-2xl md:text-3xl font-extrabold text-white font-display">
             {metrics.registered}
           </div>
           <p className="text-[11px] text-slate-400">
@@ -107,27 +163,27 @@ export function AdminDashboard({ eventId, onNavigateToScanner, onNavigateToParti
           </p>
         </div>
 
-        {/* Card 2: Checked In */}
-        <div className="glass-card p-5 space-y-2 border-emerald-500/20 bg-emerald-950/10">
+        {/* Metric 2: Checked In */}
+        <div className="card-pro p-5 space-y-2 border-emerald-500/20 bg-emerald-950/10">
           <div className="flex items-center justify-between text-slate-400 text-xs">
-            <span>Sudah Hadir</span>
+            <span className="font-medium">Sudah Hadir</span>
             <UserCheck className="w-4 h-4 text-emerald-400" />
           </div>
-          <div className="text-3xl font-extrabold text-emerald-400 font-mono">
+          <div className="text-2xl md:text-3xl font-extrabold text-emerald-400 font-display">
             {metrics.checked_in}
           </div>
           <p className="text-[11px] text-emerald-400/80">
-            Check-in berhasil
+            Verifikasi tiket sukses
           </p>
         </div>
 
-        {/* Card 3: Not Checked In */}
-        <div className="glass-card p-5 space-y-2 border-amber-500/20 bg-amber-950/10">
+        {/* Metric 3: Not Checked In */}
+        <div className="card-pro p-5 space-y-2 border-amber-500/20 bg-amber-950/10">
           <div className="flex items-center justify-between text-slate-400 text-xs">
-            <span>Belum Hadir</span>
+            <span className="font-medium">Belum Hadir</span>
             <Clock className="w-4 h-4 text-amber-400" />
           </div>
-          <div className="text-3xl font-extrabold text-amber-400 font-mono">
+          <div className="text-2xl md:text-3xl font-extrabold text-amber-400 font-display">
             {metrics.not_checked_in}
           </div>
           <p className="text-[11px] text-amber-400/80">
@@ -135,97 +191,137 @@ export function AdminDashboard({ eventId, onNavigateToScanner, onNavigateToParti
           </p>
         </div>
 
-        {/* Card 4: Attendance Rate */}
-        <div className="glass-card p-5 space-y-2 border-purple-500/20 bg-purple-950/10">
+        {/* Metric 4: Attendance Rate */}
+        <div className="card-pro p-5 space-y-2">
           <div className="flex items-center justify-between text-slate-400 text-xs">
-            <span>Persentase Kehadiran</span>
-            <Percent className="w-4 h-4 text-purple-400" />
+            <span className="font-medium">Persentase Kehadiran</span>
+            <Percent className="w-4 h-4 text-indigo-400" />
           </div>
-          <div className="text-3xl font-extrabold text-purple-400 font-mono">
+          <div className="text-2xl md:text-3xl font-extrabold text-white font-display">
             {metrics.attendance_percentage}%
           </div>
-          {/* Progress Bar */}
           <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
             <div
-              className="bg-gradient-to-r from-indigo-500 to-purple-500 h-full rounded-full transition-all duration-500"
+              className="bg-indigo-500 h-full rounded-full transition-all duration-500"
               style={{ width: `${metrics.attendance_percentage}%` }}
-            ></div>
+            />
           </div>
         </div>
       </div>
 
-      {/* Quick Action Banner */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div
+      {/* 3. Quick Action Banner for Scanner */}
+      <div className="card-pro p-4 md:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-indigo-500/30 bg-gradient-to-r from-indigo-950/30 to-slate-900">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
+            <QrCode className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="font-bold text-white text-sm">
+              Verifikasi Tamu dengan QR Scanner
+            </h3>
+            <p className="text-xs text-slate-400">
+              Gunakan kamera ponsel atau laptop untuk check-in instan di pintu masuk acara.
+            </p>
+          </div>
+        </div>
+
+        <button
           onClick={onNavigateToScanner}
-          className="glass-card p-5 cursor-pointer glass-card-hover border-indigo-500/30 flex items-center justify-between"
+          className="btn-primary text-xs px-4 py-2 flex items-center gap-2 shrink-0 w-full sm:w-auto"
         >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400">
-              <QrCode className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="font-bold text-white text-sm">Buka QR Scanner</h3>
-              <p className="text-xs text-slate-400">Verifikasi tiket peserta via kamera laptop / HP</p>
-            </div>
-          </div>
-          <ArrowUpRight className="w-4 h-4 text-slate-400" />
-        </div>
-
-        <div
-          onClick={onNavigateToParticipants}
-          className="glass-card p-5 cursor-pointer glass-card-hover border-white/10 flex items-center justify-between"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400">
-              <Users className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="font-bold text-white text-sm">Kelola Daftar Peserta</h3>
-              <p className="text-xs text-slate-400">Lihat semua tamu, cari nama, atau export CSV</p>
-            </div>
-          </div>
-          <ArrowUpRight className="w-4 h-4 text-slate-400" />
-        </div>
+          <span>Mulai Scan QR</span>
+          <ArrowRight className="w-4 h-4" />
+        </button>
       </div>
 
-      {/* Recent Check-ins */}
-      <div className="glass-card p-5 border-white/10 space-y-4">
-        <div className="flex items-center justify-between border-b border-white/10 pb-3">
-          <h3 className="font-bold text-white text-sm flex items-center gap-2">
+      {/* 4. Recent Check-ins List */}
+      <div className="card-pro overflow-hidden">
+        <div className="p-4 border-b border-white/5 flex items-center justify-between">
+          <div className="flex items-center gap-2">
             <UserCheck className="w-4 h-4 text-emerald-400" />
-            <span>Kehadiran Terkini</span>
-          </h3>
-          <span className="text-xs text-slate-400">
-            {recent_checkins.length} check-in terakhir
-          </span>
+            <h2 className="font-bold text-white text-sm">
+              Kehadiran Terkini
+            </h2>
+          </div>
+          <button
+            onClick={onNavigateToParticipants}
+            className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold transition-colors"
+          >
+            Lihat Semua Peserta →
+          </button>
         </div>
 
         {recent_checkins.length === 0 ? (
-          <div className="py-8 text-center text-xs text-slate-400">
-            Belum ada check-in hari ini. Gunakan menu <strong>QR Scanner</strong> untuk mulai scan tiket peserta.
+          <div className="p-10 text-center space-y-3">
+            <div className="w-12 h-12 rounded-full bg-slate-800/80 mx-auto flex items-center justify-center text-slate-500">
+              <Clock className="w-6 h-6" />
+            </div>
+            <p className="text-slate-400 text-sm font-medium">
+              Belum ada peserta yang check-in pada acara ini.
+            </p>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              Scan tiket QR peserta menggunakan menu QR Scanner untuk mencatat kehadiran secara langsung.
+            </p>
+            <button
+              onClick={onNavigateToScanner}
+              className="btn-secondary text-xs mt-2"
+            >
+              <QrCode className="w-3.5 h-3.5" /> Buka QR Scanner
+            </button>
           </div>
         ) : (
-          <div className="space-y-2">
-            {recent_checkins.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between p-3 rounded-xl bg-slate-900/60 border border-white/5 text-xs hover:border-white/10 transition-colors"
-              >
-                <div className="space-y-0.5">
-                  <span className="font-bold text-white block">{item.name}</span>
-                  <span className="text-slate-400">{item.organization}</span>
+          <div className="divide-y divide-white/5">
+            {recent_checkins.map((item) => {
+              const initials = item.name
+                ? item.name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .slice(0, 2)
+                    .join("")
+                    .toUpperCase()
+                : "P";
+
+              return (
+                <div
+                  key={item.id}
+                  className="p-3.5 md:px-5 flex items-center justify-between gap-3 hover:bg-white/[0.02] transition-colors"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-full bg-indigo-600/15 border border-indigo-500/30 text-indigo-300 font-bold text-xs flex items-center justify-center shrink-0">
+                      {initials}
+                    </div>
+                    <div className="min-w-0">
+                      <span className="font-semibold text-white text-xs block truncate">
+                        {item.name}
+                      </span>
+                      <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                        {item.organization && (
+                          <span className="truncate max-w-[150px]">{item.organization}</span>
+                        )}
+                        {item.email && (
+                          <>
+                            <span className="text-slate-600 hidden sm:inline">·</span>
+                            <span className="truncate hidden sm:inline">{item.email}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 shrink-0 text-right">
+                    <span className="font-mono text-xs font-semibold text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded border border-indigo-500/20">
+                      {item.ticket_code}
+                    </span>
+                    <div className="hidden sm:block text-[11px] text-slate-400 font-mono">
+                      {item.checked_in_at ? item.checked_in_at.substring(11, 16) + " WIB" : "-"}
+                    </div>
+                    <span className="badge badge-success text-[10px]">
+                      <CheckCircle2 className="w-3 h-3" /> Hadir
+                    </span>
+                  </div>
                 </div>
-                <div className="text-right space-y-0.5">
-                  <span className="font-mono font-bold text-indigo-400 block">
-                    {item.ticket_code}
-                  </span>
-                  <span className="text-slate-400 text-[11px]">
-                    {item.checked_in_at ? item.checked_in_at.substring(11, 16) : ""}
-                  </span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
