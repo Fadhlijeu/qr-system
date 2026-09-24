@@ -1,168 +1,106 @@
-<div align="center">
+# Minimal Event Registration & QR Check-in System
 
-<img src="https://hievents-public.s3.us-west-1.amazonaws.com/website/github-banner.png?v=1" alt="Hi.Events - Open Source Event Ticketing Platform" width="100%">
+A lightweight, high-performance event registration and QR check-in platform designed for speed, simplicity, and zero maintenance overhead.
 
-# Hi.Events
+Built as an independent, single-process application with **Node.js (Express) + Native SQLite (`node:sqlite`) + React (Vite & Tailwind CSS)**.
 
-### Open-source event ticketing and management platform
+---
 
-Sell tickets online for conferences, nightlife events, concerts, club nights, workshops, and festivals.  
-Self-hosted or cloud. Your events, your brand, your data.
+## 🎯 System Overview
 
-[Try Cloud →](https://app.hi.events/auth/register?utm_source=gh-readme) · [Live Demo](https://app.hi.events/event/2/hievents-conference-2030?utm_source=gh-readme) · [Documentation](https://hi.events/docs?utm_source=gh-readme) · [Website](https://hi.events?utm_source=gh-readme)
+Strictly divided into two simple sides:
 
-[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://github.com/HiEventsDev/Hi.Events/blob/develop/LICENCE)
-[![GitHub Release](https://img.shields.io/github/v/release/HiEventsDev/hi.events?include_prereleases)](https://github.com/HiEventsDev/hi.events/releases)
-[![GitHub Stars](https://img.shields.io/github/stars/HiEventsDev/hi.events?style=flat)](https://github.com/HiEventsDev/hi.events/stargazers)
-[![Docker Pulls](https://img.shields.io/docker/pulls/daveearley/hi.events-all-in-one)](https://hub.docker.com/r/daveearley/hi.events-all-in-one)
-[![E2E Tests](https://github.com/HiEventsDev/hi.events/actions/workflows/e2e.yml/badge.svg?event=push)](https://github.com/HiEventsDev/hi.events/actions/workflows/e2e.yml)
+### 1. ADMIN (`/admin`)
+- **Login**: Secure JWT authentication.
+- **Event Setup**: Create and customize events (date, time, location, capacity).
+- **Shareable Link**: Instant one-click copy of the public registration URL (`/e/:slug`).
+- **Dashboard**: Real-time metrics (Total Registered, Checked-in, Not Checked-in, Attendance %), and recent check-ins stream.
+- **Participants**: Filterable and searchable attendee table with manual check-in toggle and direct WhatsApp links.
+- **QR Scanner**: Live camera barcode scanner + manual code input with audio beeps and 3 instant states:
+  - 🟢 **CHECK-IN SUCCESS** (Valid ticket, marks attendee as present)
+  - 🟡 **ALREADY CHECKED IN** (Duplicate scan warning with previous check-in time)
+  - 🔴 **INVALID QR** (Fake or mismatched event ticket)
+- **Data Export**: Clean CSV download with attendee details and check-in timestamps.
 
-<a href="https://trendshift.io/repositories/10563" target="_blank">
-  <img src="https://trendshift.io/api/badge/repositories/10563" alt="HiEventsDev%2Fhi.events | Trendshift" width="250" height="55"/>
-</a>
+### 2. GUEST (`/e/:slug`)
+- **Direct Access**: Guest clicks the event link and immediately sees the clean registration form.
+- **Minimal Form**:
+  - Nama Lengkap (Full Name)
+  - Nomor WhatsApp
+  - Alamat Email
+  - Instansi / Organisasi / Perusahaan
+- **Instant E-Ticket**: Submit directly generates an E-Ticket with a unique, cryptographically random QR code (`TKT-XXXXXX`).
+- **Zero Friction**: No passwords, no login, no checkout, no payment tiers.
+- **Save Ticket**: Guests can instantly save/download the QR code image or print the boarding-pass style ticket.
 
-<p>
-<a href="README.de.md">Deutsch</a> · <a href="README.pt.md">Português</a> · <a href="README.fr.md">Français</a> · <a href="README.it.md">Italiano</a> · <a href="README.nl.md">Nederlands</a> · <a href="README.es.md">Español</a> · <a href="README.zh-cn.md">中文</a> · <a href="README.zh-hk.md">繁體中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.vi.md">Tiếng Việt</a> · <a href="README.tr.md">Türkçe</a> · <a href="README.hu.md">Magyar</a> · <a href="README.pl.md">Polski</a> · <a href="README.sk.md">Slovenčina</a> · <a href="README.el.md">Ελληνικά</a> · <a href="README.fi.md">Suomi</a>
-</p>
+---
 
-</div>
+## ⚡ Quick Start
 
-<br>
+### Prerequisites
+- Node.js v22 or v24+ (uses native `node:sqlite`)
 
-## Why Hi.Events?
-
-Most ticketing platforms charge per-ticket fees and lock your data into their ecosystem. **Hi.Events is a modern,
-open-source alternative to Eventbrite, Tickettailor, Dice.fm, and other ticketing platforms** for organizers who want
-full control over branding, checkout, data, and infrastructure.
-
-Trusted by thousands of event organizers worldwide — from nightlife promoters and festivals to venues, community groups,
-and conference hosts. Run it yourself, or let us run it for you on Hi.Events Cloud.
-
-<br>
-
-<img alt="Hi.Events Dashboard" src="https://hievents-public.s3.us-west-1.amazonaws.com/website/github-screenshot.png"/>
-
-<br>
-
-## Features
-
-**🎟️ Ticketing & sales** — free, paid, donation and tiered tickets · recurring and multi-date events · sold-out
-waitlists · promo codes, including promo-gated and hidden tickets · product add-ons and categories · tax, fee and
-capacity management
-
-**🎨 Branding & customization** — event homepage designer for cover image, colors and typography · branded organizer
-homepage · customizable PDF tickets · embeddable ticket widget · SEO metadata controls
-
-**👥 Attendee management** — custom checkout questions · advanced search, filtering and CSV/XLSX export · full and
-partial refunds · bulk messaging · QR check-in with scan logs and access-controlled check-in lists
-
-**📊 Analytics & growth** — sales dashboard · affiliate tracking · daily sales, product sales, promo code, revenue and
-tax reports · outgoing webhooks
-
-**⚙️ Operations** — multi-user roles · Stripe Connect payments · offline payment methods · automatic
-invoicing · online and in-person events · multi-language support · full REST API with
-[interactive OpenAPI docs](#rest-api)
-
-<br>
-
-## Quick Start
-
-Built with **Laravel 13** (PHP >=8.3) · **React 19** with SSR · **TypeScript** · **PostgreSQL** · **Redis** · **Docker**.
-
-### One-Click Deploy
-
-[![Deploy on DigitalOcean](https://www.deploytodo.com/do-btn-blue.svg)](https://github.com/HiEventsDev/hi.events-digitalocean)
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://github.com/HiEventsDev/hi.events-render.com)
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/8CGKmu?referralCode=KvSr11)
-[![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/8DIRY6)
-
-### Docker
-
+### 1. Install Dependencies
 ```bash
-git clone git@github.com:HiEventsDev/hi.events.git
-cd hi.events/docker/all-in-one
-
-# Generate keys (Linux/macOS)
-echo "APP_KEY=base64:$(openssl rand -base64 32)" >> .env
-echo "JWT_SECRET=$(openssl rand -base64 32)" >> .env
-
-docker compose up -d
+npm install
+cd client && npm install && cd ..
 ```
 
-> [!TIP]
-> **Windows users:** See `./docker/all-in-one/README.md` for key generation instructions.
-
-Open `http://localhost:8123` and create your account.
-
-📖 [Full installation guide](https://hi.events/docs/getting-started?utm_source=gh-readme)
-
-### REST API
-
-Hi.Events ships a documented REST API. Set `API_DOCS_ENABLED=true` in your `.env` to serve interactive OpenAPI
-documentation at `/docs/api` on your own instance, or export the spec with:
-
+### 2. Build Frontend
 ```bash
-php artisan scramble:export
+npm run build
 ```
 
-<br>
+### 3. Start Production Server
+```bash
+npm start
+```
+The server will start at `http://localhost:5000`.
 
-## Hi.Events Cloud
+### 4. For Local Development (Hot Reloading)
+```bash
+# Terminal 1: Backend
+npm run server
 
-Prefer not to self-host? **[Hi.Events Cloud](https://app.hi.events/auth/register?utm_source=gh-readme)** is the fully
-managed version of this repository — zero setup, automatic updates and managed infrastructure, run by the team that
-builds Hi.Events.
+# Terminal 2: Frontend (Vite)
+npm run client
+```
 
-[Get started →](https://app.hi.events/auth/register?utm_source=gh-readme)
+---
 
-<br>
+## 🔑 Default Admin Credentials
 
-## Licensing
+- **URL**: `http://localhost:5000/admin`
+- **Email**: `fadhli@gmail.com`
+- **Password**: `GrandOpening2026!`
+- **Sample Event**: `http://localhost:5000/e/grand-opening`
 
-Hi.Events is licensed under **AGPL-3.0 with additional terms**. The additional terms require the "Powered by Hi.Events"
-attribution to be retained on pages and emails generated by the software — see [LICENCE](LICENCE) for the exact wording.
+---
 
-**Commercial licences are available** if you'd like to remove the attribution or need terms that suit a white-labelled
-deployment. [Licensing options](https://hi.events/licensing?utm_source=gh-readme) ·
-[hello@hi.events](mailto:hello@hi.events)
+## 📁 Project Structure
 
-<br>
+```
+├── client/                     # Vite + React Frontend
+│   ├── src/
+│   │   ├── pages/
+│   │   │   ├── guest/          # Guest registration form & Ticket viewer
+│   │   │   └── admin/          # Admin Dashboard, Scanner, Participants & Events
+│   │   ├── components/         # TicketCard & Navbar
+│   │   └── api.js              # Lightweight API client
+├── server/                     # Express Backend
+│   ├── src/
+│   │   ├── routes/             # Admin, Guest & Auth routes
+│   │   ├── notifications/      # Modular notification providers (Email, WhatsApp stub)
+│   │   ├── db.js               # Native SQLite auto-migration & seed
+│   │   ├── auth.js             # JWT auth middleware
+│   │   └── index.js            # Express server
+└── package.json                # Root scripts & workspaces
+```
 
-## Contributing
+---
 
-Contributions are welcome — see the [contributing guide](CONTRIBUTING.md) to get started. Please open an issue or
-discussion before starting significant work so we can align on the approach. Contributors sign
-a [CLA](CLA.md).
+## 🔔 Modular Notification Architecture
 
-<a href="https://github.com/HiEventsDev/hi.events/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=HiEventsDev/hi.events" alt="Hi.Events contributors" />
-</a>
-
-<br>
-
-## Security
-
-Found a vulnerability? Please report it privately to [security@hi.events](mailto:security@hi.events) rather than opening
-a public issue. See our [security policy](SECURITY.md).
-
-<br>
-
-## Support
-
-📖 [Documentation](https://hi.events/docs?utm_source=gh-readme) ·
-🐛 [GitHub Issues](https://github.com/HiEventsDev/hi.events/issues) ·
-💬 [Discussions](https://github.com/HiEventsDev/hi.events/discussions) ·
-📧 [hello@hi.events](mailto:hello@hi.events)
-
-New features and improvements are listed on
-the [releases page](https://github.com/HiEventsDev/hi.events/releases).
-
-<br>
-
-<div align="center">
-
-**[Website](https://hi.events)** · **[Documentation](https://hi.events/docs)** · **[Cloud](https://app.hi.events/auth/register?utm_source=gh-readme)** · **[Licensing](https://hi.events/licensing)**
-
-Made with ☘️ in Ireland
-
-</div>
+Located in `server/src/notifications/`:
+- **`emailProvider.js`**: Simulated/SMTP email notification on registration.
+- **`whatsappProvider.js`**: Clean stub interface ready to plug in any WhatsApp Gateway (e.g. Fonnte, Waha, Baileys, Twilio) without modifying core registration or check-in logic.
