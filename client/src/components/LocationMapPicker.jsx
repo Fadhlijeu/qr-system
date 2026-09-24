@@ -77,10 +77,16 @@ export function LocationMapPicker({ initialValue, onSelectLocation, onClose }) {
 
     mapInstanceRef.current = map;
 
-    // OpenStreetMap tile layer
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-    }).addTo(map);
+    // High-performance CartoDB Voyager tile layer (Fastly CDN, prevents volunteer-server 403 access blocks)
+    L.tileLayer(
+      "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+      {
+        subdomains: "abcd",
+        maxZoom: 20,
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      }
+    ).addTo(map);
 
     // Left-click: pans/navigates map
     // Right-click: picks/drops the pin and reverse geocodes

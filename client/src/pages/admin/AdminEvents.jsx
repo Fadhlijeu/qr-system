@@ -455,7 +455,6 @@ export function AdminEvents({ onSelectEvent, selectedEventId }) {
       {/* Modal Create / Edit Event */}
       {showModal && (
         <div
-          onClick={() => setShowModal(false)}
           style={{
             position: "fixed",
             inset: 0,
@@ -469,7 +468,6 @@ export function AdminEvents({ onSelectEvent, selectedEventId }) {
           }}
         >
           <div
-            onClick={(e) => e.stopPropagation()}
             className="modal-demo"
             style={{ width: "100%", maxWidth: "560px", margin: "auto" }}
           >
@@ -477,7 +475,7 @@ export function AdminEvents({ onSelectEvent, selectedEventId }) {
               <div className="modal-title">
                 {editingEvent ? "Edit Data Acara" : "Buat Acara Baru"}
               </div>
-              <button onClick={() => setShowModal(false)} style={{ color: "var(--t-light)", cursor: "pointer" }}>
+              <button type="button" onClick={() => setShowModal(false)} style={{ color: "var(--t-light)", cursor: "pointer" }}>
                 ✕
               </button>
             </div>
@@ -715,7 +713,6 @@ export function AdminEvents({ onSelectEvent, selectedEventId }) {
       {/* ── Delete Confirmation Modal (2 steps) ── */}
       {deleteTarget && (
         <div
-          onClick={closeDeleteModal}
           style={{
             position: "fixed",
             inset: 0,
@@ -728,7 +725,6 @@ export function AdminEvents({ onSelectEvent, selectedEventId }) {
           }}
         >
           <div
-            onClick={(e) => e.stopPropagation()}
             className="modal-demo"
             style={{ width: "100%", maxWidth: "460px", margin: "auto" }}
           >
@@ -744,7 +740,7 @@ export function AdminEvents({ onSelectEvent, selectedEventId }) {
                     </svg>
                     Hapus Acara
                   </div>
-                  <button onClick={closeDeleteModal} style={{ color: "var(--t-light)", cursor: "pointer", fontSize: "18px" }}>✕</button>
+                  <button type="button" onClick={closeDeleteModal} style={{ color: "var(--t-light)", cursor: "pointer", fontSize: "18px" }}>✕</button>
                 </div>
                 <div className="modal-body" style={{ padding: "20px 24px" }}>
                   <p style={{ fontSize: "14px", color: "var(--t-base)", marginBottom: "12px" }}>

@@ -34,6 +34,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Added `_adminator_ref/` and temporary dump files to `.gitignore` to keep repositories clean.
 
 ### Fixed
+- **Map Tile 403 Access Blocked**:
+  - Replaced OpenStreetMap standard tile servers (`tile.openstreetmap.org`, which strictly blocks third-party web apps and development servers with HTTP 403 hazard tiles per their Tile Usage Policy) with high-performance **CartoDB Voyager** raster tiles backed by global Fastly CDN. Map now renders with zero rate limits or 403 blocks.
+- **Accidental Modal Dismissal on Outside Click**:
+  - Disabled backdrop click-to-close behavior on event creation, event edit, and event deletion modal dialogs. Panitia can now freely click around and type inputs without accidental dismissal or lost progress; dialogs can only be closed via the explicit `✕` or `Batal` buttons.
 - **Check-in Scanner Exception Handling**:
   - Resolved `Cannot read properties of undefined (reading 'name')` crash when scanning invalid or unregistered tickets.
   - Added strict guard branching for `INVALID` ticket responses and sanitized error messages so raw JavaScript runtime exceptions never surface to panitia.
