@@ -50,8 +50,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Fixed
 - **Dashboard Label Visibility**:
   - Restored clear and prominent `Dashboard` title and eyebrow labels on both active event views and empty states in `AdminDashboard`, ensuring users always have clear section context.
-- **Map Tile 403 Access Blocked**:
-  - Replaced OpenStreetMap standard tile servers (`tile.openstreetmap.org`, which strictly blocks third-party web apps and development servers with HTTP 403 hazard tiles per their Tile Usage Policy) with high-performance **CartoDB Voyager** raster tiles backed by global Fastly CDN. Map now renders with zero rate limits or 403 blocks.
+- **Map Tile Watermark & Access Blocked (ESRI World Street Map)**:
+  - Replaced tile provider with high-performance **ESRI World Street Map** (`server.arcgisonline.com`). Completely eliminates OpenStreetMap 403 hazard tiles and removes CartoDB diagonal "API KEY REQUIRED" watermarks, offering clean, crisp Indonesian street mapping with zero rate limits and no API key requirement.
 - **Accidental Modal Dismissal on Outside Click**:
   - Disabled backdrop click-to-close behavior on event creation, event edit, and event deletion modal dialogs. Panitia can now freely click around and type inputs without accidental dismissal or lost progress; dialogs can only be closed via the explicit `✕` or `Batal` buttons.
 - **Check-in Scanner Exception Handling**:

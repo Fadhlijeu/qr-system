@@ -77,14 +77,13 @@ export function LocationMapPicker({ initialValue, onSelectLocation, onClose }) {
 
     mapInstanceRef.current = map;
 
-    // High-performance CartoDB Voyager tile layer (Fastly CDN, prevents volunteer-server 403 access blocks)
+    // High-performance ESRI World Street Map (Public raster basemap, no API key needed, zero watermarks, no 403 blocks)
     L.tileLayer(
-      "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
       {
-        subdomains: "abcd",
-        maxZoom: 20,
+        maxZoom: 19,
         attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+          "Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom",
       }
     ).addTo(map);
 
