@@ -74,10 +74,6 @@ export function TicketView({ ticketCode }) {
       </div>
 
       <TicketCard ticket={ticketData.ticket} event={ticketData.event} />
-
-      <footer style={{ textAlign: "center", padding: "32px 0 16px", color: "var(--t-light)", fontSize: "12px" }}>
-        QR Event Registration & Admission System · Adminator Edition
-      </footer>
     </div>
   );
 }

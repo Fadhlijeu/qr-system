@@ -5,6 +5,18 @@ import { notificationService } from "../notifications/notificationService.js";
 
 const router = Router();
 
+// Public: list active events (used by the guest page when no slug is given)
+router.get("/events", (req, res) => {
+  const events = db.prepare(`
+    SELECT e.id, e.title, e.slug, e.description, e.location, e.date, e.time, e.image_url, e.lat, e.lng
+    FROM events e
+    WHERE status = 'ACTIVE'
+    ORDER BY created_at DESC
+  `).all();
+
+  res.json({ events });
+});
+
 // Generate human-friendly unique ticket code, e.g., TKT-7K9M2P
 function generateTicketCode(prefix = "TKT") {
   const chars = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"; // clean unambiguous characters (no 0/O, 1/I)
@@ -119,6 +131,9 @@ router.post("/events/:slug/register", async (req, res) => {
         time: event.time,
         location: event.location,
         description: event.description,
+        image_url: event.image_url,
+        lat: event.lat,
+        lng: event.lng,
       },
     });
   } catch (err) {
@@ -131,7 +146,8 @@ router.post("/events/:slug/register", async (req, res) => {
 router.get("/tickets/:ticketCode", (req, res) => {
   const { ticketCode } = req.params;
   const participant = db.prepare(`
-    SELECT p.*, e.title as event_title, e.slug as event_slug, e.date as event_date, e.time as event_time, e.location as event_location, e.description as event_description
+    SELECT p.*, e.title as event_title, e.slug as event_slug, e.date as event_date, e.time as event_time, e.location as event_location, e.description as event_description,
+      e.image_url as event_image_url, e.lat as event_lat, e.lng as event_lng
     FROM participants p
     JOIN events e ON p.event_id = e.id
     WHERE p.ticket_code = ?
@@ -159,6 +175,9 @@ router.get("/tickets/:ticketCode", (req, res) => {
       time: participant.event_time,
       location: participant.event_location,
       description: participant.event_description,
+      image_url: participant.event_image_url,
+      lat: participant.event_lat,
+      lng: participant.event_lng,
     },
   });
 });

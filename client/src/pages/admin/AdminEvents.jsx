@@ -1,20 +1,35 @@
 import React, { useState, useEffect } from "react";
 import { api } from "../../api";
+import { LocationMapPicker } from "../../components/LocationMapPicker";
 
-// Helper to generate long random link ID
-function generateLongSlug(baseName = "event") {
-  const cleanBase = baseName
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 16);
+// Helper to generate a pure random, unguessable public link ID (no event name text)
+function generateLongSlug() {
   const chars = "abcdefghjkmnpqrstuvwxyz23456789";
   let randomStr = "";
-  for (let i = 0; i < 16; i++) {
+  for (let i = 0; i < 20; i++) {
     randomStr += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-  return cleanBase ? `${cleanBase}-${randomStr}` : `evt-${randomStr}`;
+  return `evt-${randomStr}`;
+}
+
+// Normalize a stored "HH:MM - HH:MM <tz>" string into { start, end, tz } parts
+function parseTimeRange(value) {
+  const raw = String(value || "").trim();
+  const tzMatch = raw.match(/\b(WIB|WITA|WIT|UTC|GMT)\b/i);
+  const tz = tzMatch ? tzMatch[1].toUpperCase() : "WIB";
+  const times = raw.match(/\d{1,2}:\d{2}/g) || [];
+  return {
+    start: times[0] || "",
+    end: times[1] || "",
+    tz,
+  };
+}
+
+// Build the stored time string from picker parts
+function buildTimeRange(start, end, tz) {
+  if (!start && !end) return "";
+  if (start && end) return `${start} - ${end} ${tz}`;
+  return `${start || end} ${tz}`;
 }
 
 export function AdminEvents({ onSelectEvent, selectedEventId }) {
@@ -41,7 +56,59 @@ export function AdminEvents({ onSelectEvent, selectedEventId }) {
     location: "",
     description: "",
     capacity: 0,
+    image_url: "",
   });
+
+  // Time picker parts (stored as a single "HH:MM - HH:MM WIB" string in `form.time`)
+  const [timeStart, setTimeStart] = useState("");
+  const [timeEnd, setTimeEnd] = useState("");
+  const [timeTz, setTimeTz] = useState("WIB");
+
+  // Optional Google Maps location picker
+  const [showMapPicker, setShowMapPicker] = useState(false);
+
+  // Image picker state: "upload" (file → data URL) or "url" (paste link)
+  const [imageMode, setImageMode] = useState("upload");
+  const [imageError, setImageError] = useState(null);
+  const fileInputRef = React.useRef(null);
+
+  const MAX_IMAGE_BYTES = 2 * 1024 * 1024; // 2MB
+
+  const handleImageFile = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setImageError("File harus berupa gambar (JPG, PNG, WEBP, atau GIF).");
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      setImageError("Ukuran gambar maksimal 2MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setImageError(null);
+      setForm((prev) => ({ ...prev, image_url: String(reader.result || "") }));
+    };
+    reader.onerror = () => setImageError("Gagal membaca file gambar.");
+    reader.readAsDataURL(file);
+  };
+
+  const clearImage = () => {
+    setImageError(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    setForm((prev) => ({ ...prev, image_url: "" }));
+  };
+
+  // Keep the stored `form.time` in sync with the picker parts
+  const updateTime = (nextStart, nextEnd, nextTz) => {
+    setTimeStart(nextStart);
+    setTimeEnd(nextEnd);
+    setTimeTz(nextTz);
+    setForm((prev) => ({ ...prev, time: buildTimeRange(nextStart, nextEnd, nextTz) }));
+  };
 
   useEffect(() => {
     loadEvents();
@@ -63,14 +130,22 @@ export function AdminEvents({ onSelectEvent, selectedEventId }) {
   const handleOpenCreate = () => {
     setEditingEvent(null);
     setErrorMessage(null);
+    setImageError(null);
+    setImageMode("upload");
+    setShowMapPicker(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    setTimeStart("");
+    setTimeEnd("");
+    setTimeTz("WIB");
     setForm({
       title: "",
-      slug: generateLongSlug("event"),
+      slug: generateLongSlug(),
       date: new Date().toISOString().substring(0, 10),
-      time: "09:00 - 17:00 WIB",
+      time: "",
       location: "",
       description: "",
       capacity: 0,
+      image_url: "",
     });
     setShowModal(true);
   };
@@ -78,6 +153,14 @@ export function AdminEvents({ onSelectEvent, selectedEventId }) {
   const handleOpenEdit = (ev) => {
     setEditingEvent(ev);
     setErrorMessage(null);
+    setImageError(null);
+    setImageMode("upload");
+    setShowMapPicker(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    const parsedTime = parseTimeRange(ev.time);
+    setTimeStart(parsedTime.start);
+    setTimeEnd(parsedTime.end);
+    setTimeTz(parsedTime.tz);
     setForm({
       title: ev.title,
       slug: ev.slug,
@@ -86,6 +169,7 @@ export function AdminEvents({ onSelectEvent, selectedEventId }) {
       location: ev.location || "",
       description: ev.description || "",
       capacity: ev.capacity || 0,
+      image_url: ev.image_url || "",
     });
     setShowModal(true);
   };
@@ -218,6 +302,16 @@ export function AdminEvents({ onSelectEvent, selectedEventId }) {
                 }}
                 onClick={() => onSelectEvent(ev.id)}
               >
+                {ev.image_url && (
+                  <div style={{ marginBottom: "16px", overflow: "hidden", background: "var(--bg-muted)", border: "1px solid var(--border-soft)", borderRadius: "10px" }}>
+                    <img
+                      src={ev.image_url}
+                      alt={ev.title}
+                      style={{ display: "block", width: "100%", height: "140px", objectFit: "cover" }}
+                    />
+                  </div>
+                )}
+
                 <div className="card-head" style={{ marginBottom: "12px" }}>
                   <div className="card-title-wrap">
                     <span className="eyebrow" style={{ color: isSelected ? "var(--primary)" : "var(--t-light)" }}>
@@ -373,35 +467,26 @@ export function AdminEvents({ onSelectEvent, selectedEventId }) {
                     type="text"
                     required
                     value={form.title}
-                    onChange={(e) => {
-                      const title = e.target.value;
-                      setForm((prev) => ({
-                        ...prev,
-                        title,
-                        slug: !editingEvent ? generateLongSlug(title) : prev.slug
-                      }));
-                    }}
-                    placeholder="Contoh: Grand Opening Cabang Baru"
+                    onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
+                    placeholder="Nama acara"
                   />
                 </div>
 
                 <div className="field">
-                  <label className="field-label">
-                    URL Slug Unik Tamu (ID Acak Panjang) <span className="req">*</span>
-                  </label>
+                  <label className="field-label">URL Unik Acara</label>
                   <div className="input-group">
                     <span className="addon">/e/</span>
                     <input
                       className="input mono"
                       type="text"
-                      required
                       value={form.slug}
-                      onChange={(e) => setForm((prev) => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") }))}
+                      readOnly
+                      aria-readonly="true"
+                      onFocus={(e) => e.target.select()}
+                      style={{ color: "var(--t-muted)" }}
                     />
                   </div>
-                  <span className="field-help">
-                    Tautan unik acak yang panjang untuk mencegah tamu menebak URL acara lain.
-                  </span>
+                  <span className="field-help">Dibuat otomatis oleh sistem dan tidak dapat diubah.</span>
                 </div>
 
                 <div className="form-grid">
@@ -419,14 +504,36 @@ export function AdminEvents({ onSelectEvent, selectedEventId }) {
                   </div>
 
                   <div className="field">
-                    <label className="field-label">Waktu</label>
+                    <label className="field-label">Waktu Mulai</label>
                     <input
                       className="input"
-                      type="text"
-                      value={form.time}
-                      onChange={(e) => setForm((prev) => ({ ...prev, time: e.target.value }))}
-                      placeholder="09:00 - 15:00 WIB"
+                      type="time"
+                      value={timeStart}
+                      onChange={(e) => updateTime(e.target.value, timeEnd, timeTz)}
                     />
+                  </div>
+
+                  <div className="field">
+                    <label className="field-label">Waktu Selesai</label>
+                    <input
+                      className="input"
+                      type="time"
+                      value={timeEnd}
+                      onChange={(e) => updateTime(timeStart, e.target.value, timeTz)}
+                    />
+                  </div>
+
+                  <div className="field">
+                    <label className="field-label">Zona Waktu</label>
+                    <select
+                      className="select"
+                      value={timeTz}
+                      onChange={(e) => updateTime(timeStart, timeEnd, e.target.value)}
+                    >
+                      <option value="WIB">WIB (UTC+7)</option>
+                      <option value="WITA">WITA (UTC+8)</option>
+                      <option value="WIT">WIT (UTC+9)</option>
+                    </select>
                   </div>
                 </div>
 
@@ -437,8 +544,42 @@ export function AdminEvents({ onSelectEvent, selectedEventId }) {
                     type="text"
                     value={form.location}
                     onChange={(e) => setForm((prev) => ({ ...prev, location: e.target.value }))}
-                    placeholder="Contoh: Grand Ballroom Lt. 3"
+                    placeholder="Nama tempat atau alamat acara"
                   />
+                  <div style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowMapPicker((v) => !v)}
+                      className="btn btn--ghost btn--sm"
+                      style={{ fontSize: "11.5px", padding: "5px 12px" }}
+                    >
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M12 21s-7-5.5-7-11a7 7 0 1 1 14 0c0 5.5-7 11-7 11z" />
+                        <circle cx="12" cy="10" r="2.5" />
+                      </svg>
+                      <span>{showMapPicker ? "Tutup Pemilih Peta" : "Pilih Titik di Peta (Interactive Pin)"}</span>
+                    </button>
+                    {form.location && (
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(form.location)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ fontSize: "12px", color: "var(--primary)", fontWeight: 600 }}
+                      >
+                        Buka di Google Maps ↗
+                      </a>
+                    )}
+                  </div>
+
+                  {showMapPicker && (
+                    <LocationMapPicker
+                      initialValue={form.location}
+                      onSelectLocation={(address) => {
+                        setForm((prev) => ({ ...prev, location: address }));
+                      }}
+                      onClose={() => setShowMapPicker(false)}
+                    />
+                  )}
                 </div>
 
                 <div className="field">
@@ -450,6 +591,79 @@ export function AdminEvents({ onSelectEvent, selectedEventId }) {
                     onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
                     placeholder="Keterangan singkat untuk tamu undangan..."
                   />
+                </div>
+
+                {/* Display Image (optional) */}
+                <div className="field">
+                  <label className="field-label">Gambar Display Acara (opsional)</label>
+
+                  <div style={{ display: "flex", gap: "6px", marginBottom: "10px" }}>
+                    <button
+                      type="button"
+                      onClick={() => setImageMode("upload")}
+                      className={`btn btn--sm ${imageMode === "upload" ? "btn--primary" : "btn--ghost"}`}
+                      style={{ fontSize: "11.5px", padding: "5px 12px" }}
+                    >
+                      Unggah File
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setImageMode("url")}
+                      className={`btn btn--sm ${imageMode === "url" ? "btn--primary" : "btn--ghost"}`}
+                      style={{ fontSize: "11.5px", padding: "5px 12px" }}
+                    >
+                      Pakai URL
+                    </button>
+                  </div>
+
+                  {imageMode === "upload" ? (
+                    <input
+                      ref={fileInputRef}
+                      className="input"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageFile}
+                    />
+                  ) : (
+                    <input
+                      className="input"
+                      type="url"
+                      value={form.image_url.startsWith("data:") ? "" : form.image_url}
+                      onChange={(e) => {
+                        setImageError(null);
+                        setForm((prev) => ({ ...prev, image_url: e.target.value }));
+                      }}
+                      placeholder="https://..."
+                    />
+                  )}
+
+                  {imageError && (
+                    <span style={{ fontSize: "11.5px", color: "var(--danger)", marginTop: "6px", display: "block" }}>
+                      {imageError}
+                    </span>
+                  )}
+
+                  {form.image_url ? (
+                    <div style={{ marginTop: "12px", border: "1px solid var(--border)", borderRadius: "10px", overflow: "hidden", background: "var(--bg-muted)" }}>
+                      <img
+                        src={form.image_url}
+                        alt="Pratinjau gambar acara"
+                        style={{ display: "block", width: "100%", height: "auto", maxHeight: "220px", objectFit: "cover" }}
+                      />
+                      <div style={{ padding: "8px 10px", display: "flex", justifyContent: "flex-end" }}>
+                        <button
+                          type="button"
+                          onClick={clearImage}
+                          className="btn btn--sm btn--ghost"
+                          style={{ fontSize: "11.5px", color: "var(--danger)", padding: "4px 10px" }}
+                        >
+                          Hapus Gambar
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="field-help">Kosongkan jika acara tidak perlu gambar display.</span>
+                  )}
                 </div>
               </div>
 

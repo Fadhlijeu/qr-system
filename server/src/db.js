@@ -30,6 +30,9 @@ export function initDatabase() {
       time TEXT,
       capacity INTEGER DEFAULT 0,
       status TEXT DEFAULT 'ACTIVE',
+      image_url TEXT,
+      lat REAL,
+      lng REAL,
       created_at TEXT DEFAULT (datetime('now', 'localtime')),
       updated_at TEXT DEFAULT (datetime('now', 'localtime'))
     );
@@ -63,6 +66,25 @@ export function initDatabase() {
   // Safe migration for admin_id in events
   try {
     db.exec(`ALTER TABLE events ADD COLUMN admin_id INTEGER REFERENCES admins (id) ON DELETE SET NULL;`);
+  } catch (err) {
+    // Column already exists, ignore
+  }
+
+  // Safe migration for event display image (optional, may be empty)
+  try {
+    db.exec(`ALTER TABLE events ADD COLUMN image_url TEXT;`);
+  } catch (err) {
+    // Column already exists, ignore
+  }
+
+  // Safe migration for picked map coordinates (optional, may be empty)
+  try {
+    db.exec(`ALTER TABLE events ADD COLUMN lat REAL;`);
+  } catch (err) {
+    // Column already exists, ignore
+  }
+  try {
+    db.exec(`ALTER TABLE events ADD COLUMN lng REAL;`);
   } catch (err) {
     // Column already exists, ignore
   }

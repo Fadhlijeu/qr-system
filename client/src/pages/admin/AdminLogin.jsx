@@ -92,7 +92,7 @@ export function AdminLogin({ onLoginSuccess }) {
               </svg>
             </div>
             <div>
-              <div style={{ fontWeight: 700, fontSize: "15px", color: "var(--t-base)" }}>QR Event</div>
+              <div style={{ fontWeight: 700, fontSize: "15px", color: "var(--t-base)" }}>QR Check-in</div>
               <div style={{ fontSize: "11px", color: "var(--t-muted)" }}>Admin Portal</div>
             </div>
           </div>
@@ -125,7 +125,7 @@ export function AdminLogin({ onLoginSuccess }) {
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="admin@example.com"
+                      placeholder="Alamat email"
                       autoComplete="email"
                     />
                   </div>
@@ -210,7 +210,7 @@ export function AdminLogin({ onLoginSuccess }) {
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="admin@example.com"
+                      placeholder="Alamat email"
                       autoComplete="email"
                     />
                   </div>

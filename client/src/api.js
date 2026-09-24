@@ -40,6 +40,7 @@ async function request(endpoint, options = {}) {
 export const api = {
   getConfig: () => request(`/config`),
   // Public Guest API
+  getPublicEvents: () => request(`/events`),
   getPublicEvent: (slug) => request(`/events/${slug}`),
   registerGuest: (slug, payload) =>
     request(`/events/${slug}/register`, {

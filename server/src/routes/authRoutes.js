@@ -47,7 +47,7 @@ async function sendOtpEmail(email, name, code) {
   }
   const from = process.env.SMTP_FROM || process.env.SMTP_USER;
   await transporter.sendMail({
-    from: `"QR Event System" <${from}>`,
+    from: `"QR Check-in" <${from}>`,
     to: email,
     subject: "Kode Verifikasi Pendaftaran Admin",
     html: `
@@ -60,7 +60,7 @@ async function sendOtpEmail(email, name, code) {
         </div>
         <p style="color:#94a3b8;font-size:13px">Kode ini berlaku selama <strong>10 menit</strong>. Jangan bagikan kepada siapapun.</p>
         <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0"/>
-        <p style="color:#cbd5e1;font-size:11px">QR Event Management System · Grand Opening</p>
+        <p style="color:#cbd5e1;font-size:11px">Sistem Registrasi & E-Ticket Acara</p>
       </div>
     `,
   });

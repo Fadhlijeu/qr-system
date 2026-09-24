@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { api } from "../../api";
 import { TicketCard } from "../../components/TicketCard";
 
-export function GuestRegister({ slug = "grand-opening" }) {
+export function GuestRegister({ slug = null }) {
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -25,7 +25,21 @@ export function GuestRegister({ slug = "grand-opening" }) {
     setLoading(true);
     setError(null);
     try {
-      const data = await api.getPublicEvent(slug);
+      // Resolve which event to open: explicit slug from the URL, or the most
+      // recent active event. No placeholder event name is assumed.
+      let targetSlug = slug;
+      if (!targetSlug) {
+        const list = await api.getPublicEvents().catch(() => null);
+        const first = list?.events?.[0];
+        if (!first) {
+          setError("Belum ada acara yang tersedia untuk pendaftaran.");
+          setEvent(null);
+          return;
+        }
+        targetSlug = first.slug;
+      }
+
+      const data = await api.getPublicEvent(targetSlug);
       setEvent(data.event);
     } catch (err) {
       setError(err.message || "Gagal memuat informasi acara.");
@@ -126,12 +140,23 @@ export function GuestRegister({ slug = "grand-opening" }) {
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             {/* Event Summary Card */}
             <div className="card" style={{ padding: "28px" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
-                <span className="eyebrow" style={{ color: "var(--primary)" }}>
-                  Undangan Resmi
-                </span>
-                <span className="badge success dot">Pendaftaran Terbuka</span>
-              </div>
+              {event?.image_url && (
+                <div
+                  style={{
+                    marginBottom: "20px",
+                    borderRadius: "10px",
+                    overflow: "hidden",
+                    background: "var(--bg-muted)",
+                    border: "1px solid var(--border-soft)"
+                  }}
+                >
+                  <img
+                    src={event.image_url}
+                    alt={event?.title || "Gambar acara"}
+                    style={{ display: "block", width: "100%", height: "auto", maxHeight: "320px", objectFit: "cover" }}
+                  />
+                </div>
+              )}
 
               <h1 style={{ fontSize: "26px", fontWeight: 700, margin: "0 0 8px", color: "var(--t-base)", letterSpacing: "-0.02em" }}>
                 {event?.title}
@@ -197,7 +222,7 @@ export function GuestRegister({ slug = "grand-opening" }) {
                       required
                       value={formData.name}
                       onChange={handleChange}
-                      placeholder="Contoh: Raden Wijaya"
+                      placeholder="Nama lengkap"
                     />
                   </div>
                 </div>
@@ -220,7 +245,7 @@ export function GuestRegister({ slug = "grand-opening" }) {
                         required
                         value={formData.whatsapp}
                         onChange={handleChange}
-                        placeholder="08123456789"
+                        placeholder="Nomor WhatsApp"
                       />
                     </div>
                   </div>
@@ -239,7 +264,7 @@ export function GuestRegister({ slug = "grand-opening" }) {
                         name="email"
                         value={formData.email}
                         onChange={handleChange}
-                        placeholder="tamu@example.com"
+                        placeholder="Alamat email"
                       />
                     </div>
                   </div>
@@ -259,7 +284,7 @@ export function GuestRegister({ slug = "grand-opening" }) {
                       name="organization"
                       value={formData.organization}
                       onChange={handleChange}
-                      placeholder="Contoh: PT Maju Bersama / Pribadi"
+                      placeholder="Instansi / perusahaan"
                     />
                   </div>
                 </div>
@@ -279,10 +304,6 @@ export function GuestRegister({ slug = "grand-opening" }) {
           </div>
         )}
       </div>
-
-      <footer style={{ textAlign: "center", padding: "32px 0 16px", color: "var(--t-light)", fontSize: "12px" }}>
-        Grand Opening · Adminator QR Event System
-      </footer>
     </div>
   );
 }

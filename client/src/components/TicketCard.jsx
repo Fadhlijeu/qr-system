@@ -57,6 +57,17 @@ export function TicketCard({ ticket, event }) {
         {/* Top 4px Solid Accent Line */}
         <div style={{ height: "4px", background: "linear-gradient(90deg, var(--primary), var(--purple))", width: "100%" }} />
 
+        {/* Optional Event Image */}
+        {event?.image_url && (
+          <div style={{ background: "var(--bg-muted)", borderBottom: "1px solid var(--border-soft)" }}>
+            <img
+              src={event.image_url}
+              alt={event?.title || "Gambar acara"}
+              style={{ display: "block", width: "100%", height: "auto", maxHeight: "240px", objectFit: "cover" }}
+            />
+          </div>
+        )}
+
         {/* 1. Header */}
         <div
           style={{
@@ -71,10 +82,10 @@ export function TicketCard({ ticket, event }) {
         >
           <div>
             <span className="eyebrow" style={{ color: "var(--primary)", display: "block", marginBottom: "4px" }}>
-              Official Event Admission Pass
+              E-Ticket Acara
             </span>
             <h2 style={{ fontSize: "24px", fontWeight: 700, margin: 0, color: "var(--t-base)", letterSpacing: "-0.02em" }}>
-              {event?.title || "Grand Opening Event"}
+              {event?.title || "-"}
             </h2>
           </div>
 
@@ -129,7 +140,7 @@ export function TicketCard({ ticket, event }) {
                   Lokasi / Venue
                 </span>
                 <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--t-base)" }}>
-                  {event?.location || "Main Venue"}
+                  {event?.location || "-"}
                 </div>
               </div>
 
@@ -138,7 +149,7 @@ export function TicketCard({ ticket, event }) {
                   Jenis Tiket
                 </span>
                 <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--t-base)" }}>
-                  General Admission (Undangan)
+                  Tiket Masuk Acara
                 </div>
               </div>
 

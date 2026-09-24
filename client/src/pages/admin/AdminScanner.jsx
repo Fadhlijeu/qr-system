@@ -297,7 +297,7 @@ export function AdminScanner({ eventId, onCheckInComplete }) {
             </form>
           </div>
 
-          {/* Real-time Scan Result using Adminator Alerts */}
+          {/* Real-time Scan Result */}
           {scanResult && (
             <div style={{ marginTop: "16px" }}>
               <div className={`alert ${scanResult.type === "success" ? "success" : scanResult.type === "warning" ? "warning" : "danger"}`}>

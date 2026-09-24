@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { api } from "../../api";
 
-export function AdminDashboard({ eventId, onNavigateToScanner, onNavigateToParticipants }) {
+export function AdminDashboard({ eventId, onNavigateToScanner, onNavigateToParticipants, onNavigateToEvents }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -69,7 +69,7 @@ export function AdminDashboard({ eventId, onNavigateToScanner, onNavigateToParti
           Anda belum memilih atau membuat acara. Silakan buat acara baru untuk mendapatkan tautan pendaftaran tamu dan kode tiket QR unik.
         </p>
         <button
-          onClick={() => window.location.reload()} // or route to events tab
+          onClick={() => onNavigateToEvents && onNavigateToEvents()}
           className="btn btn--primary"
           style={{ margin: "0 auto" }}
         >
@@ -85,7 +85,27 @@ export function AdminDashboard({ eventId, onNavigateToScanner, onNavigateToParti
 
   return (
     <div>
-      {/* 1. Adminator Hero Header */}
+      {/* Event display image (above event text) */}
+      {event.image_url && (
+        <div
+          style={{
+            width: "100%",
+            marginBottom: "18px",
+            borderRadius: "12px",
+            overflow: "hidden",
+            background: "var(--bg-muted)",
+            border: "1px solid var(--border-soft)"
+          }}
+        >
+          <img
+            src={event.image_url}
+            alt={event.title}
+            style={{ display: "block", width: "100%", height: "auto", maxHeight: "300px", objectFit: "cover" }}
+          />
+        </div>
+      )}
+
+      {/* 1. Hero Header */}
       <section className="hero">
         <div className="hero-text">
           <span className="eyebrow">
@@ -138,7 +158,7 @@ export function AdminDashboard({ eventId, onNavigateToScanner, onNavigateToParti
         </div>
       </section>
 
-      {/* 2. Adminator KPI Cards Grid (Untruncated) */}
+      {/* KPI Cards Grid */}
       <section className="kpi-grid" aria-label="Key metrics">
         {/* Total Registered */}
         <article className="kpi-card c-primary">

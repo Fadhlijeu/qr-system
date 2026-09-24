@@ -119,7 +119,7 @@ export function AdminParticipants({ eventId }) {
         </div>
       )}
 
-      {/* Adminator Hero Header */}
+      {/* Hero Header */}
       <section className="hero">
         <div className="hero-text">
           <span className="eyebrow">Manajemen · Kehadiran</span>
@@ -140,7 +140,7 @@ export function AdminParticipants({ eventId }) {
         </div>
       </section>
 
-      {/* Adminator DataTable Section */}
+      {/* DataTable Section */}
       <div className="grid">
         <section className="col-12 card">
           {/* Data Toolbar */}
@@ -376,7 +376,7 @@ export function AdminParticipants({ eventId }) {
         </section>
       </div>
 
-      {/* Participant Detail Modal (Adminator Style) */}
+      {/* Participant Detail Modal */}
       {selectedParticipant && (
         <div
           onClick={() => setSelectedParticipant(null)}

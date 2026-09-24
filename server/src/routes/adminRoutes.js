@@ -1,9 +1,52 @@
 import { Router } from "express";
+import crypto from "node:crypto";
 import { db } from "../db.js";
 import { requireAdmin } from "../auth.js";
 
 const router = Router();
 router.use(requireAdmin);
+
+// Normalize an incoming coordinate value.
+// Accepts: empty/null/undefined (no coordinate), or a finite number.
+function normalizeCoordinate(raw, label) {
+  if (raw === undefined || raw === null || raw === "") return { ok: true, value: null };
+  const num = Number(raw);
+  if (!Number.isFinite(num)) {
+    return { ok: false, error: `Koordinat ${label} tidak valid.` };
+  }
+  const limit = label === "lat" ? 90 : 180;
+  if (num < -limit || num > limit) {
+    return { ok: false, error: `Koordinat ${label} di luar rentang yang wajar.` };
+  }
+  return { ok: true, value: num };
+}
+
+// Max size for an uploaded event image sent as a data URL (~2MB binary → ~2.7MB base64)
+const MAX_IMAGE_DATA_URL_LENGTH = 2_800_000;
+
+
+// Normalize an incoming image value.
+// Accepts: empty string (no image), a data URL (uploaded file), or an http(s) URL.
+function normalizeEventImage(raw) {
+  const value = String(raw ?? "").trim();
+  if (!value) return { ok: true, value: "" };
+
+  if (value.startsWith("data:image/")) {
+    if (value.length > MAX_IMAGE_DATA_URL_LENGTH) {
+      return { ok: false, error: "Ukuran gambar terlalu besar. Maksimal sekitar 2MB." };
+    }
+    return { ok: true, value };
+  }
+
+  if (/^https?:\/\//i.test(value)) {
+    if (value.length > 2048) {
+      return { ok: false, error: "URL gambar terlalu panjang." };
+    }
+    return { ok: true, value };
+  }
+
+  return { ok: false, error: "Format gambar tidak dikenali. Gunakan file gambar atau URL http(s)." };
+}
 
 // Helper to extract clean ticket code from scanned string/URL
 function extractTicketCode(raw) {
@@ -38,13 +81,27 @@ router.get("/events", (req, res) => {
 // 2. Create Event
 router.post("/events", (req, res) => {
   const adminId = req.admin?.id;
-  const { title, slug, description, location, date, time, capacity, status } = req.body;
+  const { title, slug, description, location, date, time, capacity, status, image_url, lat, lng } = req.body;
 
   if (!title?.trim()) {
     return res.status(400).json({ error: "Judul acara wajib diisi." });
   }
   if (!date?.trim()) {
     return res.status(400).json({ error: "Tanggal acara wajib diisi." });
+  }
+
+  const image = normalizeEventImage(image_url);
+  if (!image.ok) {
+    return res.status(400).json({ error: image.error });
+  }
+
+  const latitude = normalizeCoordinate(lat, "lat");
+  if (!latitude.ok) {
+    return res.status(400).json({ error: latitude.error });
+  }
+  const longitude = normalizeCoordinate(lng, "lng");
+  if (!longitude.ok) {
+    return res.status(400).json({ error: longitude.error });
   }
 
   // Generate slug if not provided, or sanitize provided slug
@@ -55,9 +112,8 @@ router.post("/events", (req, res) => {
     .replace(/^-+|-+$/g, "");
 
   if (!cleanSlug) {
-    const randomSuffix = crypto.randomBytes(8).toString("hex");
-    const base = title.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 24);
-    cleanSlug = base ? `${base}-${randomSuffix}` : `event-${randomSuffix}`;
+    // Pure random public link ID — never derived from the event title
+    cleanSlug = `evt-${crypto.randomBytes(10).toString("hex")}`;
   } else {
     // Check unique slug and append long random token if collision
     const existing = db.prepare("SELECT id FROM events WHERE slug = ?").get(cleanSlug);
@@ -67,8 +123,8 @@ router.post("/events", (req, res) => {
   }
 
   const result = db.prepare(`
-    INSERT INTO events (admin_id, title, slug, description, location, date, time, capacity, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO events (admin_id, title, slug, description, location, date, time, capacity, status, image_url, lat, lng)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     adminId || null,
     title.trim(),
@@ -78,7 +134,10 @@ router.post("/events", (req, res) => {
     date.trim(),
     time?.trim() || "",
     Number(capacity) || 0,
-    status || "ACTIVE"
+    status || "ACTIVE",
+    image.value,
+    latitude.value,
+    longitude.value
   );
 
   const event = db.prepare("SELECT * FROM events WHERE id = ?").get(Number(result.lastInsertRowid));
@@ -88,16 +147,43 @@ router.post("/events", (req, res) => {
 // 3. Update Event
 router.put("/events/:id", (req, res) => {
   const { id } = req.params;
-  const { title, description, location, date, time, capacity, status } = req.body;
+  const { title, description, location, date, time, capacity, status, image_url, lat, lng } = req.body;
 
   const event = db.prepare("SELECT * FROM events WHERE id = ?").get(id);
   if (!event) {
     return res.status(404).json({ error: "Acara tidak ditemukan." });
   }
 
+  let nextImage = event.image_url;
+  if (image_url !== undefined) {
+    const image = normalizeEventImage(image_url);
+    if (!image.ok) {
+      return res.status(400).json({ error: image.error });
+    }
+    nextImage = image.value;
+  }
+
+  let nextLat = event.lat ?? null;
+  if (lat !== undefined) {
+    const parsed = normalizeCoordinate(lat, "lat");
+    if (!parsed.ok) {
+      return res.status(400).json({ error: parsed.error });
+    }
+    nextLat = parsed.value;
+  }
+
+  let nextLng = event.lng ?? null;
+  if (lng !== undefined) {
+    const parsed = normalizeCoordinate(lng, "lng");
+    if (!parsed.ok) {
+      return res.status(400).json({ error: parsed.error });
+    }
+    nextLng = parsed.value;
+  }
+
   db.prepare(`
     UPDATE events
-    SET title = ?, description = ?, location = ?, date = ?, time = ?, capacity = ?, status = ?, updated_at = datetime('now', 'localtime')
+    SET title = ?, description = ?, location = ?, date = ?, time = ?, capacity = ?, status = ?, image_url = ?, lat = ?, lng = ?, updated_at = datetime('now', 'localtime')
     WHERE id = ?
   `).run(
     title?.trim() || event.title,
@@ -107,6 +193,9 @@ router.put("/events/:id", (req, res) => {
     time !== undefined ? time.trim() : event.time,
     capacity !== undefined ? Number(capacity) : event.capacity,
     status || event.status,
+    nextImage || "",
+    nextLat,
+    nextLng,
     id
   );
 

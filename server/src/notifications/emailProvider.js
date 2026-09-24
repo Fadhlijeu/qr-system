@@ -49,6 +49,7 @@ export class EmailNotificationProvider {
     <body>
       <div class="card">
         <div class="header">
+          ${event.image_url ? `<img src="${event.image_url}" alt="" style="display:block;width:100%;height:auto;margin-bottom:12px;" />` : ""}
           <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.9; margin-bottom: 4px;">Konfirmasi Registrasi Acara</div>
           <h1 style="margin: 0; font-size: 22px;">${event.title}</h1>
         </div>

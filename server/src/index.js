@@ -16,7 +16,8 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+// Larger limit so admins can upload a small event image as a base64 data URL
+app.use(express.json({ limit: "4mb" }));
 
 // Initialize Database (WAL mode, tables & initial seeds)
 initDatabase();
@@ -55,6 +56,9 @@ app.get("/api/config", (req, res) => {
     currentOrigin,
     guestDomain: process.env.GUEST_DOMAIN || currentOrigin,
     adminDomain: process.env.ADMIN_DOMAIN || currentOrigin,
+    // Google Maps JavaScript API key (Places + Maps). Empty when not configured,
+    // which makes the client fall back to the manual/embed map picker.
+    googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || "",
   });
 });
 

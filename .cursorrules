@@ -1,3 +1,3 @@
 # Fadhlijeu/qr-grand-opening rules
 Minimal Event Registration & E-Ticket QR Check-in System.
-Stack: Node.js, Express, Native SQLite, React, Vite, Adminator CSS.
+Stack: Node.js, Express, Native SQLite, React, Vite, Tailwind CSS.

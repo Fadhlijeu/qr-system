@@ -8,9 +8,8 @@ client/dist/
 # Database files
 server/data/
 
-# Legacy HiEvents archive & Adminator reference
+# Legacy HiEvents archive
 _legacy_hievents/
-_adminator_ref/
 
 # Environment files
 .env
@@ -25,3 +24,5 @@ _adminator_ref/
 # Temporary & Cache
 tmp/
 .vercel/
+_adminator_ref/
+_tmp_dump.cjs

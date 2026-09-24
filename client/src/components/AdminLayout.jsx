@@ -89,21 +89,21 @@ export function AdminLayout({
         aria-hidden="true"
       />
 
-      {/* Adminator Sidebar */}
+      {/* Sidebar */}
       <aside className="d-sidebar">
         {/* Brand Header */}
         <div className="brand">
           <div className="brand-logo">
-            <svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
-              <path
-                fill="#ffffff"
-                d="M14.747 9.125c.527-1.426 1.736-2.573 3.317-2.573c1.643 0 2.792 1.085 3.318 2.573l6.077 16.867c.186.496.248.931.248 1.147c0 1.209-.992 2.046-2.139 2.046c-1.303 0-1.954-.682-2.264-1.611l-.931-2.915h-8.62l-.93 2.884c-.31.961-.961 1.642-2.232 1.642c-1.24 0-2.294-.93-2.294-2.17c0-.496.155-.868.217-1.023l6.233-16.867zm.34 11.256h5.891l-2.883-8.992h-.062l-2.946 8.992z"
-              />
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+              <path d="M14 14h3v3h-3zM19 19h2v2h-2zM19 14h2M14 19h2" />
             </svg>
           </div>
           <div className="brand-text">
-            <div className="brand-name">Adminator</div>
-            <div className="brand-tag">QR Event System</div>
+            <div className="brand-name">QR Check-in</div>
+            <div className="brand-tag">Registrasi & Check-in</div>
           </div>
         </div>
 
@@ -197,8 +197,8 @@ export function AdminLayout({
           <div className="workspace">
             <div className="workspace-avatar">{initials}</div>
             <div className="workspace-text">
-              <div className="workspace-name">{admin?.name || "Admin"}</div>
-              <div className="workspace-role">{admin?.email || "admin@example.com"}</div>
+              <div className="workspace-name">{admin?.name || "-"}</div>
+              <div className="workspace-role">{admin?.email || "-"}</div>
             </div>
             <button
               onClick={handleLogout}
@@ -220,7 +220,7 @@ export function AdminLayout({
 
       {/* Main Panel */}
       <div className="main">
-        {/* Adminator Topbar */}
+        {/* Topbar */}
         <header className="d-topbar">
           <div className="crumbs">
             <button
@@ -292,13 +292,9 @@ export function AdminLayout({
           {children}
         </main>
 
-        {/* Adminator Footer */}
+        {/* Footer */}
         <footer className="d-footer">
-          <div>© 2026 · Adminator QR Event System</div>
-          <div className="d-footer-meta">
-            <span>Clean Architecture</span>
-            <span>v4.1.2</span>
-          </div>
+          <div>© {new Date().getFullYear()} · QR Check-in System</div>
         </footer>
       </div>
     </div>

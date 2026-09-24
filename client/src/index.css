@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* Grand Opening Design Tokens */
+    /* Design Tokens */
     --hi-text: #0f172a;
     --hi-text-muted: #64748b;
     --hi-text-tertiary: #94a3b8;

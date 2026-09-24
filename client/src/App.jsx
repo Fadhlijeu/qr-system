@@ -100,6 +100,7 @@ export function App() {
             eventId={selectedEventId}
             onNavigateToScanner={() => setActiveAdminTab("scanner")}
             onNavigateToParticipants={() => setActiveAdminTab("participants")}
+            onNavigateToEvents={() => setActiveAdminTab("events")}
           />
         )}
 
@@ -119,7 +120,9 @@ export function App() {
             selectedEventId={selectedEventId}
             onSelectEvent={(id) => {
               setSelectedEventId(id);
-              setActiveAdminTab("dashboard");
+              // Stay on the events tab while managing events.
+              // Creating/selecting an event here must NOT bounce the user back
+              // to the dashboard (that made the list appear to "not open").
             }}
           />
         )}
@@ -128,11 +131,13 @@ export function App() {
   }
 
   // 3. Guest Registration: /e/:slug or root /
-  let eventSlug = "grand-opening";
+  // Explicit slug from the URL takes priority; otherwise wait for the first
+  // public event to be resolved (no hardcoded placeholder event name).
+  let eventSlug = null;
   if (path.startsWith("/e/")) {
-    eventSlug = currentPath.split("/e/")[1]?.split("/")[0] || "grand-opening";
+    eventSlug = currentPath.split("/e/")[1]?.split("/")[0] || null;
   } else if (path.startsWith("/event/")) {
-    eventSlug = currentPath.split("/event/")[1]?.split("/")[0] || "grand-opening";
+    eventSlug = currentPath.split("/event/")[1]?.split("/")[0] || null;
   }
 
   return <GuestRegister slug={eventSlug} />;
