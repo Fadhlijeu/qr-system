@@ -1,33 +1,26 @@
-./.idea
-./node_modules
-./.phpunit.result.cache
+# Dependencies
+node_modules/
+client/node_modules/
+
+# Build artifacts
+client/dist/
+
+# Database files
+server/data/
+
+# Legacy HiEvents archive
+_legacy_hievents/
+
+# Environment files
+.env
+*.env
+*.env.local
+
+# IDE & Editor files
+.idea/
+.vscode/
 .DS_Store
-/.idea/**
-frontend/.env
-backend/.env
-docker/all-in-one/.env
-docker-compose.override.yml
-todo.md
-/prompts/**
-/prompts
 
-.vercel
-prompts/
-
-
-/playground/**
-/playground/
-
-/plans/**
-/plans
-
-.claude/worktrees/
-.claude/scheduled_tasks.lock
-tmp_translate/
-test_results/
-
-/demo-reel/**
-/demo-reel/
-
-/release-notes/**
-/release-notes/
+# Temporary & Cache
+tmp/
+.vercel/
