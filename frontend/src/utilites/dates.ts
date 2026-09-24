@@ -1,0 +1,143 @@
+/**
+ * All dates are stored in UTC in the database. The timezone for the account or event should be used to
+ * display the date in the correct timezone.
+ */
+
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+import advanced from 'dayjs/plugin/advancedFormat';
+import { isSsr } from "./helpers.ts";
+import { getClientLocale, SupportedLocales } from "../locales.ts";
+import { localeFormats } from "./dateLocales.ts";
+
+dayjs.extend(utc);
+dayjs.extend(relativeTime);
+dayjs.extend(timezone);
+dayjs.extend(advanced)
+
+export const formatDate = (date: string, format: string, tz: string): string => {
+    return dayjs.utc(date).tz(tz).format(format);
+};
+
+export type DateFormatType = 'fullDateTime' | 'shortDateTime' | 'shortDate' | 'chartDate' | 'dayMonthTime' | 'monthShort' | 'dayOfMonth' | 'dayName' | 'timeOnly' | 'timezone';
+
+/**
+ * Safely get a supported locale, falling back to 'en' if not supported.
+ */
+export const getSafeLocale = (locale?: string): SupportedLocales => {
+    if (locale && locale in localeFormats) {
+        return locale as SupportedLocales;
+    }
+    return 'en';
+};
+
+export const formatDateWithLocale = (
+    date: string,
+    formatType: DateFormatType,
+    tz: string,
+    locale?: SupportedLocales | string
+): string => {
+    const resolvedLocale = locale || getClientLocale();
+    const safeLocale = getSafeLocale(resolvedLocale);
+    const format = localeFormats[safeLocale][formatType];
+
+    return dayjs.utc(date).tz(tz).locale(safeLocale).format(format);
+};
+
+export const isSameDayInTimezone = (a: string, b: string, tz: string): boolean =>
+    dayjs.utc(a).tz(tz).isSame(dayjs.utc(b).tz(tz), 'day');
+
+export const formatOccurrenceEnd = (
+    endDate: string,
+    startDate: string,
+    tz: string,
+    locale?: SupportedLocales | string
+): string => {
+    return formatDateWithLocale(
+        endDate,
+        isSameDayInTimezone(startDate, endDate, tz) ? 'timeOnly' : 'dayMonthTime',
+        tz,
+        locale
+    );
+};
+
+export const formatDateForUser = (
+    date: string,
+    formatType: DateFormatType,
+    tz: string,
+    userLocaleFromSettings?: string
+): string => {
+    return formatDateWithLocale(date, formatType, tz, userLocaleFromSettings);
+};
+
+export const prettyDate = (date: string, tz: string, showTimezoneOffset: boolean = false, locale?: string): string => {
+    const formatted = formatDateWithLocale(date, 'shortDateTime', tz, locale);
+
+    if (showTimezoneOffset) {
+        const tzAbbr = formatDateWithLocale(date, 'timezone', tz, locale);
+        return `${formatted} (${tzAbbr})`;
+    }
+
+    return formatted;
+};
+
+/**
+ * We don't explicitly convert to the event timezone here as we want to
+ * display the 'ago' time in the user's timezone.
+ *
+ * @param date string
+ */
+export const relativeDate = (date: string): string => {
+    const dateInUTC = dayjs.utc(date);
+    const locale = getClientLocale();
+
+    return dayjs().locale(locale).to(dateInUTC);
+};
+
+export const getDateTimePickerFormat = (): string => {
+    const locale = getClientLocale();
+    const safeLocale = getSafeLocale(locale);
+    return localeFormats[safeLocale].dateTimePicker;
+};
+
+export const isValidDate = (date?: string | null): boolean => {
+    return !!date && dayjs(date).isValid();
+};
+
+export const utcToTz = (date: undefined | string | Date, tz: string): string | undefined => {
+    if (!date) {
+        return undefined;
+    }
+    // eslint-disable-next-line lingui/no-unlocalized-strings
+    return dayjs.utc(date).tz(tz).format('YYYY-MM-DDTHH:mm');
+};
+
+export const nowInTimezone = (tz: string): string => {
+    // eslint-disable-next-line lingui/no-unlocalized-strings
+    return dayjs().tz(tz).format('YYYY-MM-DDTHH:mm');
+};
+
+export const dateToBrowserTz = (date: string, fallbackTz: string, locale?: string): string => {
+    const userTimezone = !isSsr()
+        ? Intl.DateTimeFormat().resolvedOptions().timeZone
+        : fallbackTz;
+
+    const formatted = formatDateWithLocale(date, 'shortDateTime', userTimezone, locale);
+    const tzAbbr = formatDateWithLocale(date, 'timezone', userTimezone, locale);
+
+    return `${formatted} ${tzAbbr}`;
+};
+
+export const isDateInFuture = (date: string): boolean => {
+    return dayjs.utc(date).diff(dayjs()) > 0;
+};
+
+export const utcDateToEpochMs = (date: string): number => {
+    return dayjs.utc(date).valueOf();
+};
+
+export const isDateInPast = (date: string): boolean => {
+    return dayjs.utc(date).diff(dayjs()) < 0;
+}

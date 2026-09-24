@@ -1,0 +1,188 @@
+@use "../auth-common" as auth;
+@use "../../../../styles/mixins.scss";
+
+.header {
+  @include auth.auth-header;
+}
+
+.loginCard {
+  form {
+    @include auth.auth-inputs;
+    @include auth.auth-button;
+  }
+}
+
+.passwordLabelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 1.25rem 0 0.375rem;
+
+  label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--hi-text);
+    cursor: pointer;
+  }
+
+  a {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--hi-color-text-muted);
+    transition: color 0.15s ease;
+
+    &:hover {
+      color: var(--mantine-color-secondary-5);
+    }
+  }
+}
+
+.ticketLookup {
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 1.5px dashed var(--hi-color-gray-2);
+
+  @include mixins.respond-below(sm) {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+  }
+}
+
+.ticketLookupTrigger {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.375rem 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--hi-color-text-muted);
+  transition: color 0.15s ease;
+  background: none;
+  border: none;
+  cursor: pointer;
+
+  @include mixins.respond-below(sm) {
+    font-size: 0.8125rem;
+  }
+
+  span {
+    flex: 1;
+    text-align: left;
+  }
+
+  &:hover {
+    color: var(--hi-text);
+  }
+
+  &[data-expanded="true"] {
+    color: var(--hi-text);
+  }
+
+  svg:first-child {
+    opacity: 0.7;
+  }
+}
+
+.chevron {
+  transition: transform 0.25s ease;
+  opacity: 0.5;
+
+  &[data-expanded="true"] {
+    transform: rotate(180deg);
+  }
+}
+
+.ticketLookupContent {
+  padding-top: 1rem;
+}
+
+.ticketLookupForm {
+  display: flex;
+  gap: 0.625rem;
+  align-items: flex-start;
+
+  @include mixins.respond-below(sm) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  :global(.mantine-TextInput-root) {
+    margin-bottom: 0;
+  }
+
+  :global(.mantine-TextInput-input) {
+    border-radius: var(--hi-radius-lg);
+    border: 1px solid var(--hi-color-gray-2);
+    padding: 0.5rem 0.875rem;
+    font-size: 0.875rem;
+    background: var(--hi-color-white);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+    @include mixins.respond-below(sm) {
+      font-size: 1rem;
+    }
+
+    &:focus {
+      border-color: var(--mantine-color-secondary-5);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--mantine-color-secondary-5) 12%, transparent);
+    }
+
+    &::placeholder {
+      color: var(--hi-color-text-tertiary);
+    }
+  }
+
+  :global(.mantine-Button-root) {
+    height: 38px;
+    border-radius: var(--hi-radius-lg);
+    font-weight: 600;
+    font-size: 0.8125rem;
+    padding: 0 1.25rem;
+    white-space: nowrap;
+    border: none;
+
+    @include mixins.respond-below(sm) {
+      height: 44px;
+      width: 100%;
+    }
+  }
+}
+
+.ticketEmailInput {
+  flex: 1;
+}
+
+.successMessage {
+  padding: 1rem 1.25rem;
+  background: var(--hi-color-gray);
+  border-radius: var(--hi-radius-lg);
+  border: 1px solid var(--hi-color-border);
+
+  p {
+    margin: 0 0 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: var(--hi-text);
+
+    @include mixins.respond-below(sm) {
+      font-size: 0.8125rem;
+    }
+  }
+}
+
+.resetLink {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--hi-color-text-muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+
+  &:hover {
+    color: var(--mantine-color-secondary-5);
+  }
+}

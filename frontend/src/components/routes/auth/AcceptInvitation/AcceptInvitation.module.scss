@@ -1,0 +1,49 @@
+@use "../auth-common" as auth;
+@use "../../../../styles/mixins.scss";
+
+.header {
+  @include auth.auth-header;
+}
+
+.invitationCard {
+  width: 100%;
+
+  form {
+    fieldset {
+      border: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    @include auth.auth-inputs;
+    @include auth.auth-button;
+
+    :global(.mantine-InputWrapper-root) {
+      margin-bottom: 1rem;
+    }
+
+    :global(.mantine-Checkbox-root) {
+      margin-bottom: 0.75rem;
+    }
+  }
+}
+
+.inputGroup {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+
+  @include mixins.respond-below(sm) {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  :global(.mantine-InputWrapper-root) {
+    margin-bottom: 0;
+
+    @include mixins.respond-below(sm) {
+      margin-bottom: 1rem;
+    }
+  }
+}

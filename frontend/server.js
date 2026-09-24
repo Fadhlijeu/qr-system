@@ -1,0 +1,239 @@
+import express from "express";
+import {installGlobals} from "@remix-run/node";
+import process from "process";
+import compression from "compression";
+import fs from "node:fs/promises";
+import sirv from "sirv";
+import cookieParser from "cookie-parser";
+import path from "node:path";
+import {fileURLToPath} from "node:url";
+import * as nodePath from "node:path";
+import * as nodeUrl from "node:url";
+import "dotenv/config";
+import * as Sentry from "@sentry/node";
+import {sitemapIndexHandler, sitemapEventsHandler, sitemapOrganizersHandler} from "./src/sitemap/proxy.js";
+import {htmlSafeJsonStringify} from "./src/utilites/safeScriptJson.js";
+
+installGlobals();
+
+async function main() {
+    const base = process.env.BASE || "/";
+    const port = process.argv.includes("--port")
+        ? process.argv[process.argv.indexOf("--port") + 1]
+        : process.env.NODE_PORT || 5678;
+    const isProduction = process.env.NODE_ENV === "production";
+
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+    const templateHtml = isProduction
+        ? await fs.readFile("./dist/client/index.html", "utf-8")
+        : "";
+
+    const ssrManifest = isProduction
+        ? await fs.readFile("./dist/client/.vite/ssr-manifest.json", "utf-8")
+        : undefined;
+
+    const app = express();
+    app.use(cookieParser());
+
+    app.use('/.well-known', express.static(path.join(__dirname, 'public/.well-known')));
+
+    app.get('/widget.js', async (req, res) => {
+        try {
+            const widgetPath = isProduction
+                ? path.join(__dirname, './dist/client/widget.js')
+                : path.join(__dirname, './public/widget.js');
+            const widgetJs = await fs.readFile(widgetPath, 'utf-8');
+            res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+            res.setHeader('Cache-Control', 'no-cache');
+            return res.status(200).send(widgetJs);
+        } catch (error) {
+            return res.status(404).send('');
+        }
+    });
+
+    const widgetTestPageEnabled = !isProduction || process.env.WIDGET_TEST_PAGE_ENABLED === 'true';
+
+    if (widgetTestPageEnabled) {
+        app.get('/widget-test', async (req, res) => {
+            try {
+                const widgetTestHtml = await fs.readFile(path.join(__dirname, './src/widget-test/index.html'), 'utf-8');
+                res.setHeader('Content-Type', 'text/html; charset=utf-8');
+                res.setHeader('Cache-Control', 'no-cache');
+                res.setHeader('X-Robots-Tag', 'noindex');
+                return res.status(200).send(widgetTestHtml);
+            } catch (error) {
+                return res.status(404).send('');
+            }
+        });
+    }
+
+    let vite;
+
+    if (!isProduction) {
+        const {createServer: viteServer} = await import("vite");
+
+        vite = await viteServer({
+            server: { middlewareMode: true },
+            appType: "custom",
+            base,
+        });
+
+        app.use(vite.middlewares);
+    } else {
+        app.use(compression());
+        app.use(base, sirv(path.join(__dirname, "./dist/client"), { extensions: [] }));
+    }
+
+    const googleConsentDefaults = (consentCookie) => {
+        const consent = new URLSearchParams(typeof consentCookie === 'string' ? consentCookie : '');
+        if (!consent.has('analytics') && !consent.has('advertising')) {
+            return "ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied',wait_for_update:500";
+        }
+        const advertising = consent.get('advertising') === '1' ? 'granted' : 'denied';
+        const analytics = consent.get('analytics') === '1' ? 'granted' : 'denied';
+        return `ad_storage:'${advertising}',ad_user_data:'${advertising}',ad_personalization:'${advertising}',analytics_storage:'${analytics}'`;
+    };
+
+    const getViteEnvironmentVariables = () => {
+        const envVars = {};
+        for (const key in process.env) {
+            if (key.startsWith('VITE_')) {
+                envVars[key] = process.env[key];
+            }
+        }
+        return htmlSafeJsonStringify(envVars);
+    };
+
+    app.get('/robots.txt', (req, res) => {
+        const frontendUrl = process.env.VITE_FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
+        const robotsTxt = `User-agent: *
+Allow: /
+
+Sitemap: ${frontendUrl}/sitemap.xml
+`;
+        res.setHeader('Content-Type', 'text/plain');
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        res.status(200).send(robotsTxt);
+    });
+
+    app.get('/sitemap.xml', sitemapIndexHandler);
+    app.get('/sitemap-events-:page.xml', sitemapEventsHandler);
+    app.get('/sitemap-organizers-:page.xml', sitemapOrganizersHandler);
+
+    const nonRenderablePathPattern = /(^|\/)\.[^/]|\.(php|asp|aspx|jsp|cgi|sql|bak|old|zip|tar|gz|rar|7z|env|ini|yml|yaml|conf|log|sh|exe|dll)$/i;
+
+    app.use("*", async (req, res, next) => {
+        if (nonRenderablePathPattern.test(req.originalUrl.split("?")[0])) {
+            return res.status(404).type("text/plain").send("Not Found");
+        }
+
+        return next();
+    });
+
+    app.use("*", async (req, res) => {
+        const url = req.originalUrl.replace(base, "");
+
+        try {
+            let template;
+            let render;
+
+            if (!isProduction) {
+                template = await fs.readFile(path.join(__dirname, "./index.html"), "utf-8");
+                template = await vite.transformIndexHtml(url, template);
+                render = (await vite.ssrLoadModule("/src/entry.server.tsx")).render;
+            } else {
+                template = templateHtml;
+                render = (await dynamicImport(path.join(__dirname, "./dist/server/entry.server.js"))).render;
+            }
+
+            const { appHtml, dehydratedState, helmetContext, themeColors, statusCode, renderErrors } = await render(
+                { req, res },
+                ssrManifest
+            );
+
+            if (statusCode >= 500) {
+                renderErrors.forEach((renderError) => {
+                    Sentry.captureException(renderError, {
+                        tags: { source: "ssr-loader" },
+                        extra: { url: req.originalUrl },
+                    });
+                });
+            }
+            const stringifiedState = htmlSafeJsonStringify(dehydratedState);
+            const stringifiedThemeColors = htmlSafeJsonStringify(themeColors);
+
+            const helmetHtml = Object.values(helmetContext.helmet || {})
+                .map((value) => value.toString() || "")
+                .join(" ");
+
+            const envVariablesHtml = `<script>window.hievents = ${getViteEnvironmentVariables()};</script>`;
+
+            const headSnippets = [];
+            if (process.env.VITE_COOKIE_CONSENT_ENABLED === 'true') {
+                headSnippets.push(`<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('consent','default',{${googleConsentDefaults(req.cookies?.hi_cookie_consent)}});</script>`);
+            }
+            if (process.env.VITE_GOOGLE_ADS_CONVERSION_ID) {
+                const conversionId = encodeURIComponent(process.env.VITE_GOOGLE_ADS_CONVERSION_ID);
+                headSnippets.push(`
+                <script async src="https://www.googletagmanager.com/gtag/js?id=${conversionId}"></script>
+                <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${conversionId}');</script>
+            `);
+            }
+            if (process.env.VITE_FATHOM_SITE_ID) {
+                headSnippets.push(`
+                <script src="https://cdn.usefathom.com/script.js" data-spa="auto" data-site="${encodeURIComponent(process.env.VITE_FATHOM_SITE_ID)}" defer></script>
+            `);
+            }
+
+            const html = template
+                .replace("<!--head-snippets-->", () => headSnippets.join("\n"))
+                .replace("<!--app-html-->", () => appHtml)
+                .replace("<!--dehydrated-state-->", () => `<script>window.__REHYDRATED_STATE__ = ${stringifiedState};window.__THEME_COLORS__ = ${stringifiedThemeColors}</script>`)
+                .replace("<!--environment-variables-->", () => envVariablesHtml)
+                .replace(/<!--render-helmet-->.*?<!--\/render-helmet-->/s, () => helmetHtml);
+
+            res.setHeader("Content-Type", "text/html");
+            return res.status(statusCode || 200).end(html);
+        } catch (error) {
+            if (error instanceof Response) {
+                if (error.status >= 300 && error.status < 400) {
+                    return res.redirect(error.status, error.headers.get("Location") || "/");
+                } else {
+                    return res.status(error.status).send(await error.text());
+                }
+            }
+
+            Sentry.captureException(error, {
+                tags: { source: "ssr-render" },
+                extra: { url: req.originalUrl },
+            });
+            console.error(error);
+            res.status(500).send("Internal Server Error");
+        }
+    });
+
+    Sentry.setupExpressErrorHandler(app);
+
+    app.use((error, req, res, _next) => {
+        console.error(error);
+
+        if (res.headersSent) {
+            return res.end();
+        }
+
+        return res.status(500).type("text/plain").send("Internal Server Error");
+    });
+
+    app.listen(port, () => {
+        console.info(`SSR Serving at http://localhost:${port}`);
+    });
+
+    const dynamicImport = async (path) => {
+        return import(
+            nodePath.isAbsolute(path) ? nodeUrl.pathToFileURL(path).toString() : path
+        );
+        
+    }
+}
+main();

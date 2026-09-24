@@ -1,0 +1,125 @@
+@use "../../../styles/mixins.scss";
+
+.authLayout {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, color-mix(in srgb, var(--mantine-color-primary-1, #ede9fe) 50%, transparent), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% 110%, color-mix(in srgb, var(--mantine-color-secondary-1, #f3e8ff) 40%, transparent), transparent 70%),
+    var(--hi-color-white, #ffffff);
+  isolation: isolate;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='2.4' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    background-size: 160px 160px;
+  }
+}
+
+.container {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 480px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 2.5rem 1.5rem 2rem;
+
+  @include mixins.respond-below(sm) {
+    padding: 1.75rem 1.25rem 1.5rem;
+    max-width: 100%;
+  }
+}
+
+.headerArea {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.logoIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--mantine-color-primary-6, #7c3aed) 0%, var(--mantine-color-secondary-6, #9333ea) 100%);
+  color: #ffffff;
+  box-shadow:
+    0 10px 25px -5px color-mix(in srgb, var(--mantine-color-primary-6, #7c3aed) 40%, transparent),
+    0 4px 6px -2px color-mix(in srgb, var(--mantine-color-primary-6, #7c3aed) 20%, transparent);
+  transition: transform 0.25s ease;
+
+  &:hover {
+    transform: scale(1.04);
+  }
+
+  svg {
+    stroke: #ffffff;
+  }
+}
+
+.formArea {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem 0;
+}
+
+.wrapper {
+  width: 100%;
+
+  a {
+    color: var(--mantine-color-secondary-5, #8b5cf6);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: var(--mantine-color-secondary-7, #6d28d9);
+      text-decoration: underline;
+    }
+  }
+
+  footer {
+    font-size: 0.8125rem;
+    margin-top: 1.75rem;
+    color: var(--hi-color-gray-dark, #6b7280);
+    line-height: 1.5;
+    text-align: center;
+
+    a {
+      font-weight: 500;
+    }
+  }
+}
+
+.panelFooter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: auto;
+  padding-top: 1rem;
+}
+
+.languageSwitcher {
+  width: 110px;
+}
