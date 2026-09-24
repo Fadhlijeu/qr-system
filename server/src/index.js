@@ -7,6 +7,7 @@ import { initDatabase } from "./db.js";
 import authRoutes from "./routes/authRoutes.js";
 import guestRoutes from "./routes/guestRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import { securityHeaders, apiLimiter } from "./security.js";
 
 dotenv.config();
 
@@ -14,10 +15,32 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(cors());
-// Larger limit so admins can upload a small event image as a base64 data URL
+// Security Headers (Helmet: HSTS, X-Frame-Options, X-Content-Type-Options, etc.)
+app.use(securityHeaders);
+
+// CORS configuration (controlled origins)
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(",").map((s) => s.trim())
+  : null;
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, curl, server-to-server) or matching origin
+      if (!origin || !allowedOrigins || allowedOrigins.includes(origin) || origin.startsWith("http://localhost:")) {
+        return callback(null, true);
+      }
+      return callback(new Error("Akses CORS ditolak oleh kebijakan keamanan."));
+    },
+    credentials: true,
+  })
+);
+
+// Body parsing with safe size limit
 app.use(express.json({ limit: "4mb" }));
+
+// Rate limiting on all /api endpoints
+app.use("/api/", apiLimiter);
 
 // Initialize Database (WAL mode, tables & initial seeds)
 initDatabase();
@@ -56,8 +79,6 @@ app.get("/api/config", (req, res) => {
     currentOrigin,
     guestDomain: process.env.GUEST_DOMAIN || currentOrigin,
     adminDomain: process.env.ADMIN_DOMAIN || currentOrigin,
-    // Google Maps JavaScript API key (Places + Maps). Empty when not configured,
-    // which makes the client fall back to the manual/embed map picker.
     googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || "",
   });
 });
@@ -65,6 +86,14 @@ app.get("/api/config", (req, res) => {
 // Health check endpoint
 app.get("/api/health", (req, res) => {
   res.json({ status: "OK", timestamp: new Date().toISOString() });
+});
+
+// Centralized error handler to prevent stack trace leaks
+app.use("/api", (err, req, res, next) => {
+  console.error("❌ API Error:", err.message);
+  res.status(err.status || 500).json({
+    error: process.env.NODE_ENV === "production" ? "Terjadi kesalahan pada server." : err.message,
+  });
 });
 
 // Serve frontend build in production if client/dist exists
@@ -82,6 +111,6 @@ app.get("*", (req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`\n🚀 [Server] Minimal QR Event Server is running!`);
-  console.log(`📡 URL: http://localhost:${PORT}`);
-  console.log(`👤 Default Admin: fadhli@gmail.com | Password: GrandOpening2026!\n`);
+  console.log(`📡 URL: http://localhost:${PORT}\n`);
 });
+

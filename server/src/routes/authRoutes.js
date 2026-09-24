@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import nodemailer from "nodemailer";
 import { db } from "../db.js";
 import { signToken, requireAdmin } from "../auth.js";
+import { loginLimiter, otpLimiter } from "../security.js";
 
 const router = Router();
 
@@ -68,19 +69,22 @@ async function sendOtpEmail(email, name, code) {
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
-// POST /auth/login
-router.post("/login", (req, res) => {
+// POST /auth/login (with brute-force rate limiter)
+router.post("/login", loginLimiter, (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).json({ error: "Email dan password wajib diisi." });
   }
 
-  const admin = db.prepare("SELECT * FROM admins WHERE email = ?").get(email.trim().toLowerCase());
+  const cleanEmail = String(email).trim().toLowerCase().slice(0, 150);
+  const cleanPassword = String(password).slice(0, 128);
+
+  const admin = db.prepare("SELECT * FROM admins WHERE email = ?").get(cleanEmail);
   if (!admin) {
     return res.status(401).json({ error: "Email atau password salah." });
   }
 
-  const isMatch = bcrypt.compareSync(password, admin.password_hash);
+  const isMatch = bcrypt.compareSync(cleanPassword, admin.password_hash);
   if (!isMatch) {
     return res.status(401).json({ error: "Email atau password salah." });
   }
@@ -92,8 +96,8 @@ router.post("/login", (req, res) => {
   });
 });
 
-// POST /auth/register/request-otp — Step 1: validate & send OTP
-router.post("/register/request-otp", async (req, res) => {
+// POST /auth/register/request-otp — Step 1: validate & send OTP (with anti-spam rate limiter)
+router.post("/register/request-otp", otpLimiter, async (req, res) => {
   const { name, email, password } = req.body;
 
   if (!name?.trim() || !email?.trim() || !password?.trim()) {
@@ -102,8 +106,11 @@ router.post("/register/request-otp", async (req, res) => {
   if (password.trim().length < 8) {
     return res.status(400).json({ error: "Kata sandi minimal 8 karakter." });
   }
+  if (name.trim().length > 100) {
+    return res.status(400).json({ error: "Nama maksimal 100 karakter." });
+  }
 
-  const cleanEmail = email.trim().toLowerCase();
+  const cleanEmail = email.trim().toLowerCase().slice(0, 150);
 
   // Basic email format check
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

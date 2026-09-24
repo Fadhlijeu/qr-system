@@ -2,6 +2,7 @@ import { Router } from "express";
 import crypto from "node:crypto";
 import { db } from "../db.js";
 import { notificationService } from "../notifications/notificationService.js";
+import { registerLimiter, sanitizeString } from "../security.js";
 
 const router = Router();
 
@@ -51,23 +52,28 @@ router.get("/events/:slug", (req, res) => {
   });
 });
 
-// Guest registration endpoint
-router.post("/events/:slug/register", async (req, res) => {
+// Guest registration endpoint (with rate limiter to prevent bot spam)
+router.post("/events/:slug/register", registerLimiter, async (req, res) => {
   const { slug } = req.params;
   const { name, whatsapp, email, organization } = req.body;
 
-  // Validation: 4 mandatory fields
-  if (!name?.trim()) {
-    return res.status(400).json({ error: "Nama Lengkap wajib diisi." });
+  // Validation: 4 mandatory fields with strict bounds
+  const cleanName = sanitizeString(name, 100);
+  const cleanWhatsapp = sanitizeString(whatsapp, 30);
+  const cleanEmail = sanitizeString(email, 150).toLowerCase();
+  const cleanOrg = sanitizeString(organization, 150);
+
+  if (!cleanName) {
+    return res.status(400).json({ error: "Nama Lengkap wajib diisi (maksimal 100 karakter)." });
   }
-  if (!whatsapp?.trim()) {
-    return res.status(400).json({ error: "Nomor WhatsApp wajib diisi." });
+  if (!cleanWhatsapp || !/^[0-9+\-\s()]{7,30}$/.test(cleanWhatsapp)) {
+    return res.status(400).json({ error: "Nomor WhatsApp tidak valid (minimal 7 digit)." });
   }
-  if (!email?.trim()) {
-    return res.status(400).json({ error: "Email wajib diisi." });
+  if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+    return res.status(400).json({ error: "Format email tidak valid." });
   }
-  if (!organization?.trim()) {
-    return res.status(400).json({ error: "Instansi / Organisasi wajib diisi." });
+  if (!cleanOrg) {
+    return res.status(400).json({ error: "Instansi / Organisasi wajib diisi (maksimal 150 karakter)." });
   }
 
   const event = db.prepare("SELECT * FROM events WHERE slug = ?").get(slug);
@@ -77,14 +83,6 @@ router.post("/events/:slug/register", async (req, res) => {
 
   if (event.status !== "ACTIVE") {
     return res.status(400).json({ error: "Pendaftaran untuk acara ini sedang ditutup." });
-  }
-
-  // Check capacity if set
-  if (event.capacity > 0) {
-    const countRow = db.prepare("SELECT COUNT(*) as total FROM participants WHERE event_id = ?").get(event.id);
-    if (countRow && countRow.total >= event.capacity) {
-      return res.status(400).json({ error: "Mohon maaf, kuota pendaftaran untuk acara ini sudah penuh." });
-    }
   }
 
   // Generate unique ticket code
@@ -98,20 +96,35 @@ router.post("/events/:slug/register", async (req, res) => {
     attempts++;
   }
 
-  const cleanName = name.trim();
-  const cleanWhatsapp = whatsapp.trim();
-  const cleanEmail = email.trim().toLowerCase();
-  const cleanOrg = organization.trim();
-
+  // Atomic capacity check and insertion to prevent race condition overbooking
+  db.exec("BEGIN IMMEDIATE");
+  let participantId = null;
   try {
+    if (event.capacity > 0) {
+      const countRow = db.prepare("SELECT COUNT(*) as total FROM participants WHERE event_id = ?").get(event.id);
+      if (countRow && countRow.total >= event.capacity) {
+        db.exec("ROLLBACK");
+        return res.status(400).json({ error: "Mohon maaf, kuota pendaftaran untuk acara ini sudah penuh." });
+      }
+    }
+
     const insertStmt = db.prepare(`
       INSERT INTO participants (event_id, ticket_code, name, whatsapp, email, organization, checked_in)
       VALUES (?, ?, ?, ?, ?, ?, 0)
     `);
 
     const result = insertStmt.run(event.id, ticketCode, cleanName, cleanWhatsapp, cleanEmail, cleanOrg);
-    const participantId = Number(result.lastInsertRowid);
+    participantId = Number(result.lastInsertRowid);
+    db.exec("COMMIT");
+  } catch (err) {
+    try {
+      db.exec("ROLLBACK");
+    } catch (_) {}
+    console.error("Registration transaction error:", err);
+    return res.status(500).json({ error: "Terjadi kesalahan sistem saat mendaftar. Silakan coba lagi." });
+  }
 
+  try {
     const participant = db.prepare("SELECT * FROM participants WHERE id = ?").get(participantId);
 
     // Asynchronous notification (non-blocking)

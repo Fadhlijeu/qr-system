@@ -33,3 +33,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Clicking "Buat Acara Pertama" in `AdminDashboard` now directly navigates to the Events tab instead of triggering a full page reload.
 - **Delete Modal Layout**:
   - Fixed vertical text distortion on confirmation buttons and resolved server delete route exceptions.
+
+### Security
+- **Defense-in-Depth & Hi.Events Security Parity**:
+  - **HTTP Security Headers (`helmet`)**: Enforced `HSTS`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, and hidden `X-Powered-By`.
+  - **Rate Limiting (`express-rate-limit`)**:
+    - Brute-force protection on `/api/auth/login` (max 10 attempts / 15m).
+    - Anti-spam & email bombing protection on OTP request (max 5 requests / 10m).
+    - Anti-bot flood on guest registration (max 20 registrations / 10m).
+    - QR scanning abuse throttle on check-in scanner (max 120 scans / min).
+  - **Broken Access Control / IDOR Prevention**: Scoped all admin operations (`PUT /events/:id`, `DELETE /events/:id`, `dashboard`, `participants`, `export`, `toggle-checkin`, and `check-in`) to verified admin ownership.
+  - **Check-in Concurrency Race Condition**: Switched to atomic conditional `UPDATE participants SET checked_in = 1 ... WHERE id = ? AND checked_in = 0` to prevent double check-ins.
+  - **Event Capacity Race Condition**: Enforced SQLite `BEGIN IMMEDIATE` transactions to prevent overbooking past capacity.
+  - **CSV Formula Injection Neutralization**: Neutralized formula characters (`=`, `+`, `-`, `@`, `\t`, `\r`) in participant CSV export.
+  - **Information Disclosure Remediation**: Removed server boot console credential logging and updated `nodemailer` to v10.0.10 (0 vulnerabilities on `npm audit`).

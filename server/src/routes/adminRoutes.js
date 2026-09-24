@@ -2,9 +2,15 @@ import { Router } from "express";
 import crypto from "node:crypto";
 import { db } from "../db.js";
 import { requireAdmin } from "../auth.js";
+import { checkinLimiter, sanitizeCsvCell } from "../security.js";
 
 const router = Router();
 router.use(requireAdmin);
+
+// Helper to enforce authorization / tenant boundary (prevent IDOR)
+function getAdminEvent(eventId, adminId) {
+  return db.prepare("SELECT * FROM events WHERE id = ? AND (admin_id = ? OR admin_id IS NULL)").get(eventId, adminId || 0);
+}
 
 // Normalize an incoming coordinate value.
 // Accepts: empty/null/undefined (no coordinate), or a finite number.
@@ -147,11 +153,12 @@ router.post("/events", (req, res) => {
 // 3. Update Event
 router.put("/events/:id", (req, res) => {
   const { id } = req.params;
+  const adminId = req.admin?.id;
   const { title, description, location, date, time, capacity, status, image_url, lat, lng } = req.body;
 
-  const event = db.prepare("SELECT * FROM events WHERE id = ?").get(id);
+  const event = getAdminEvent(id, adminId);
   if (!event) {
-    return res.status(404).json({ error: "Acara tidak ditemukan." });
+    return res.status(404).json({ error: "Acara tidak ditemukan atau Anda tidak memiliki izin." });
   }
 
   let nextImage = event.image_url;
@@ -203,13 +210,14 @@ router.put("/events/:id", (req, res) => {
   res.json({ event: updated });
 });
 
-// 4. Delete Event (with all participants cascade)
+// 4. Delete Event (with all participants cascade, scoped to authorized admin)
 router.delete("/events/:id", (req, res) => {
   const { id } = req.params;
+  const adminId = req.admin?.id;
 
-  const event = db.prepare("SELECT * FROM events WHERE id = ?").get(id);
+  const event = getAdminEvent(id, adminId);
   if (!event) {
-    return res.status(404).json({ error: "Acara tidak ditemukan." });
+    return res.status(404).json({ error: "Acara tidak ditemukan atau Anda tidak memiliki izin." });
   }
 
   // Cascade: delete all participants of this event first
@@ -219,12 +227,14 @@ router.delete("/events/:id", (req, res) => {
   res.json({ success: true, message: "Acara dan semua pesertanya berhasil dihapus." });
 });
 
-// 4. Dashboard Metrics for an event
+// 5. Dashboard Metrics for an event (scoped to authorized admin)
 router.get("/events/:id/dashboard", (req, res) => {
   const { id } = req.params;
-  const event = db.prepare("SELECT * FROM events WHERE id = ?").get(id);
+  const adminId = req.admin?.id;
+
+  const event = getAdminEvent(id, adminId);
   if (!event) {
-    return res.status(404).json({ error: "Acara tidak ditemukan." });
+    return res.status(404).json({ error: "Acara tidak ditemukan atau Anda tidak memiliki izin." });
   }
 
   const regRow = db.prepare("SELECT COUNT(*) as count FROM participants WHERE event_id = ?").get(id);
@@ -256,9 +266,16 @@ router.get("/events/:id/dashboard", (req, res) => {
   });
 });
 
-// 5. Participants list with Search & Filter
+// 6. Participants list with Search & Filter (scoped to authorized admin)
 router.get("/events/:id/participants", (req, res) => {
   const { id } = req.params;
+  const adminId = req.admin?.id;
+
+  const event = getAdminEvent(id, adminId);
+  if (!event) {
+    return res.status(404).json({ error: "Acara tidak ditemukan atau Anda tidak memiliki izin." });
+  }
+
   const { search, status } = req.query;
 
   let query = "SELECT * FROM participants WHERE event_id = ?";
@@ -282,13 +299,20 @@ router.get("/events/:id/participants", (req, res) => {
   res.json({ participants, total: participants.length });
 });
 
-// 6. Manual Check-in toggle
+// 7. Manual Check-in toggle (scoped to authorized admin's event)
 router.post("/participants/:id/toggle-checkin", (req, res) => {
   const { id } = req.params;
-  const participant = db.prepare("SELECT * FROM participants WHERE id = ?").get(id);
+  const adminId = req.admin?.id;
+
+  const participant = db.prepare(`
+    SELECT p.*, e.admin_id
+    FROM participants p
+    JOIN events e ON p.event_id = e.id
+    WHERE p.id = ? AND (e.admin_id = ? OR e.admin_id IS NULL)
+  `).get(id, adminId || 0);
 
   if (!participant) {
-    return res.status(404).json({ error: "Peserta tidak ditemukan." });
+    return res.status(404).json({ error: "Peserta tidak ditemukan atau Anda tidak memiliki izin." });
   }
 
   const newStatus = participant.checked_in ? 0 : 1;
@@ -304,17 +328,24 @@ router.post("/participants/:id/toggle-checkin", (req, res) => {
   res.json({ participant: updated });
 });
 
-// 7. QR SCANNER CHECK-IN ENDPOINT
-router.post("/check-in", (req, res) => {
+// 8. QR SCANNER CHECK-IN ENDPOINT (with rate limiter, admin scoping, and atomic concurrency lock)
+router.post("/check-in", checkinLimiter, (req, res) => {
   const { code, event_id } = req.body;
+  const adminId = req.admin?.id;
+
   if (!code) {
     return res.status(400).json({ status: "INVALID", message: "Kode QR tidak boleh kosong." });
   }
 
   const cleanCode = extractTicketCode(code);
 
-  let query = "SELECT p.*, e.title as event_title FROM participants p JOIN events e ON p.event_id = e.id WHERE p.ticket_code = ?";
-  const params = [cleanCode];
+  let query = `
+    SELECT p.*, e.title as event_title, e.admin_id
+    FROM participants p
+    JOIN events e ON p.event_id = e.id
+    WHERE p.ticket_code = ? AND (e.admin_id = ? OR e.admin_id IS NULL)
+  `;
+  const params = [cleanCode, adminId || 0];
 
   if (event_id) {
     query += " AND p.event_id = ?";
@@ -323,12 +354,12 @@ router.post("/check-in", (req, res) => {
 
   const participant = db.prepare(query).get(...params);
 
-  // 1. Invalid QR
+  // 1. Invalid QR or unauthorized
   if (!participant) {
     return res.json({
       status: "INVALID",
       code: cleanCode,
-      message: "INVALID QR: Tiket tidak terdaftar atau tidak sesuai dengan acara ini.",
+      message: "INVALID QR: Tiket tidak terdaftar atau tidak sesuai dengan acara yang Anda kelola.",
     });
   }
 
@@ -349,9 +380,21 @@ router.post("/check-in", (req, res) => {
     });
   }
 
-  // 3. Success Check-In
+  // 3. Atomic Success Check-In (Prevents double check-in race conditions across concurrent scanners)
   const now = new Date().toISOString().replace("T", " ").substring(0, 19);
-  db.prepare("UPDATE participants SET checked_in = 1, checked_in_at = ? WHERE id = ?").run(now, participant.id);
+  const updateResult = db.prepare(
+    "UPDATE participants SET checked_in = 1, checked_in_at = ? WHERE id = ? AND checked_in = 0"
+  ).run(now, participant.id);
+
+  if (updateResult.changes === 0) {
+    // Another concurrent scanner checked them in at the exact same millisecond
+    const fresh = db.prepare("SELECT * FROM participants WHERE id = ?").get(participant.id);
+    return res.json({
+      status: "ALREADY_CHECKED_IN",
+      message: "ALREADY CHECKED IN: Peserta baru saja check-in di pemindai lain.",
+      participant: fresh,
+    });
+  }
 
   const updated = db.prepare("SELECT * FROM participants WHERE id = ?").get(participant.id);
 
@@ -370,12 +413,14 @@ router.post("/check-in", (req, res) => {
   });
 });
 
-// 8. CSV Export
+// 9. CSV Export (scoped to authorized admin + Formula Injection sanitized)
 router.get("/events/:id/export", (req, res) => {
   const { id } = req.params;
-  const event = db.prepare("SELECT * FROM events WHERE id = ?").get(id);
+  const adminId = req.admin?.id;
+
+  const event = getAdminEvent(id, adminId);
   if (!event) {
-    return res.status(404).send("Event not found");
+    return res.status(404).send("Acara tidak ditemukan atau Anda tidak memiliki izin.");
   }
 
   const participants = db.prepare(`
@@ -385,25 +430,19 @@ router.get("/events/:id/export", (req, res) => {
     ORDER BY id ASC
   `).all(id);
 
-  // Build clean CSV string
+  // Build clean, formula-injection-safe CSV string
   const headers = ["No", "Nomor Tiket", "Nama Lengkap", "Nomor WhatsApp", "Email", "Instansi / Organisasi", "Status Kehadiran", "Waktu Check-in", "Tanggal Registrasi"];
-  
-  const escapeCsv = (val) => {
-    if (val === null || val === undefined) return '""';
-    const s = String(val).replace(/"/g, '""');
-    return `"${s}"`;
-  };
 
   const rows = participants.map((p, idx) => [
     idx + 1,
-    escapeCsv(p.ticket_code),
-    escapeCsv(p.name),
-    escapeCsv(p.whatsapp),
-    escapeCsv(p.email),
-    escapeCsv(p.organization),
-    escapeCsv(p.checked_in ? "Hadir" : "Belum Hadir"),
-    escapeCsv(p.checked_in_at || "-"),
-    escapeCsv(p.created_at || "-"),
+    sanitizeCsvCell(p.ticket_code),
+    sanitizeCsvCell(p.name),
+    sanitizeCsvCell(p.whatsapp),
+    sanitizeCsvCell(p.email),
+    sanitizeCsvCell(p.organization),
+    sanitizeCsvCell(p.checked_in ? "Hadir" : "Belum Hadir"),
+    sanitizeCsvCell(p.checked_in_at || "-"),
+    sanitizeCsvCell(p.created_at || "-"),
   ].join(","));
 
   const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\r\n");
