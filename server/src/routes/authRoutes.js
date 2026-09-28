@@ -4,8 +4,13 @@ import nodemailer from "nodemailer";
 import { db } from "../db.js";
 import { signToken, requireAdmin } from "../auth.js";
 import { loginLimiter, otpLimiter } from "../security.js";
+import { isAdminOtpRegistrationEnabled } from "../features.js";
 
 const router = Router();
+
+// Message returned while the OTP registration feature flag is off.
+const OTP_DISABLED_MESSAGE =
+  "Pendaftaran akun admin lewat OTP email sedang dinonaktifkan sementara. Hubungi pengelola sistem untuk pembuatan akun.";
 
 // ─── In-memory OTP store ─────────────────────────────────────────────────────
 // { email → { code, expiresAt, name, password_hash } }
@@ -98,6 +103,11 @@ router.post("/login", loginLimiter, (req, res) => {
 
 // POST /auth/register/request-otp — Step 1: validate & send OTP (with anti-spam rate limiter)
 router.post("/register/request-otp", otpLimiter, async (req, res) => {
+  // Feature flag: OTP e-mail registration is temporarily disabled (code kept).
+  if (!isAdminOtpRegistrationEnabled()) {
+    return res.status(403).json({ error: OTP_DISABLED_MESSAGE, code: "ADMIN_OTP_REGISTRATION_DISABLED" });
+  }
+
   const { name, email, password } = req.body;
 
   if (!name?.trim() || !email?.trim() || !password?.trim()) {
@@ -152,6 +162,11 @@ router.post("/register/request-otp", otpLimiter, async (req, res) => {
 
 // POST /auth/register/verify-otp — Step 2: verify OTP & create account
 router.post("/register/verify-otp", (req, res) => {
+  // Feature flag: OTP e-mail registration is temporarily disabled (code kept).
+  if (!isAdminOtpRegistrationEnabled()) {
+    return res.status(403).json({ error: OTP_DISABLED_MESSAGE, code: "ADMIN_OTP_REGISTRATION_DISABLED" });
+  }
+
   const { email, otp } = req.body;
   if (!email || !otp) {
     return res.status(400).json({ error: "Email dan OTP wajib diisi." });

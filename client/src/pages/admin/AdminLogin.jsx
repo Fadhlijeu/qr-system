@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { api, setAuthToken } from "../../api";
 
 /**
@@ -38,6 +38,27 @@ export function AdminLogin({ onLoginSuccess }) {
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
   const [devMode, setDevMode] = useState(false); // true if SMTP not configured
+  // Server feature flag: admin self-registration via e-mail OTP can be switched
+  // off without removing the flow (`ENABLE_ADMIN_OTP_REGISTRATION`).
+  const [otpRegistrationEnabled, setOtpRegistrationEnabled] = useState(null);
+
+  // ── Feature flags ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .getConfig()
+      .then((res) => {
+        if (!cancelled) setOtpRegistrationEnabled(res?.adminOtpRegistrationEnabled !== false);
+      })
+      .catch(() => {
+        // Config not reachable: keep the UI untouched, the register endpoints
+        // answer with a clear message on their own.
+        if (!cancelled) setOtpRegistrationEnabled(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // ── Login ──────────────────────────────────────────────────────────────────
   const handleLogin = async (e) => {
@@ -177,12 +198,18 @@ export function AdminLogin({ onLoginSuccess }) {
                 </button>
               </form>
 
-              <p style={{ marginTop: "20px", textAlign: "center", fontSize: "12.5px", color: "var(--t-muted)" }}>
-                Belum punya akun?{" "}
-                <button type="button" onClick={goToRegister} style={{ background: "none", border: "none", color: "var(--primary)", cursor: "pointer", fontWeight: 600, padding: 0 }}>
-                  Daftar Sekarang
-                </button>
-              </p>
+              {otpRegistrationEnabled === false ? (
+                <p style={{ marginTop: "20px", textAlign: "center", fontSize: "12.5px", color: "var(--t-muted)" }}>
+                  Pendaftaran akun admin lewat OTP email sedang dinonaktifkan sementara.
+                </p>
+              ) : (
+                <p style={{ marginTop: "20px", textAlign: "center", fontSize: "12.5px", color: "var(--t-muted)" }}>
+                  Belum punya akun?{" "}
+                  <button type="button" onClick={goToRegister} style={{ background: "none", border: "none", color: "var(--primary)", cursor: "pointer", fontWeight: 600, padding: 0 }}>
+                    Daftar Sekarang
+                  </button>
+                </p>
+              )}
             </>
           )}
 

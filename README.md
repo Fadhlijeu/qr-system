@@ -96,6 +96,26 @@ Start the server again afterwards: `server/src/db.js` re-creates the default adm
 (`fadhli@gmail.com` / `GrandOpening2026!`) whenever that account is missing, so
 deleting only the rows of the `admins` table has the same effect.
 
+### Feature Flags (`.env`)
+Flags live in `server/src/features.js` and are read from the environment, so a
+feature can be parked without deleting its code:
+
+| Flag | Default | Effect when off |
+| --- | --- | --- |
+| `ENABLE_ADMIN_OTP_REGISTRATION` | `false` (**off**) | Admin self-registration via e-mail OTP is disabled: `/api/auth/register/request-otp` and `/api/auth/register/verify-otp` answer `403` and the "Daftar Sekarang" link is replaced by a notice on the login page. Login itself keeps working normally. |
+
+Create a `.env` in the repo root (when running `npm start` / `npm run dev` from the
+root) **or** in `server/.env` (when starting from the `server/` folder) — both are
+picked up — then set:
+
+```bash
+ENABLE_ADMIN_OTP_REGISTRATION=true    # turn OTP e-mail registration back on
+ENABLE_ADMIN_OTP_REGISTRATION=false   # keep it off (default)
+```
+
+Restart the server after changing a flag.
+
+
 
 ---
 

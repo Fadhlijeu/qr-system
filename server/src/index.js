@@ -8,10 +8,16 @@ import authRoutes from "./routes/authRoutes.js";
 import guestRoutes from "./routes/guestRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import { securityHeaders, apiLimiter } from "./security.js";
+import { isAdminOtpRegistrationEnabled } from "./features.js";
 
 dotenv.config();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Also support an `.env` placed next to the server package (server/.env) so the
+// feature flags work no matter which directory the process is started from.
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -80,6 +86,8 @@ app.get("/api/config", (req, res) => {
     guestDomain: process.env.GUEST_DOMAIN || currentOrigin,
     adminDomain: process.env.ADMIN_DOMAIN || currentOrigin,
     googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || "",
+    // Feature flags — see server/src/features.js
+    adminOtpRegistrationEnabled: isAdminOtpRegistrationEnabled(),
   });
 });
 

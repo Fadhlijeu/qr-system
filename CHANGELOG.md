@@ -55,6 +55,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Event registration slugs are now generated as pure unguessable alphanumeric tokens (`/e/evt-[random20]`) with no event title leakage, set to read-only in forms.
 - **Git Hygiene**:
   - Added `_adminator_ref/` and temporary dump files to `.gitignore` to keep repositories clean.
+- **Admin OTP E-mail Registration Temporarily Disabled (Feature Flag)**:
+  - Admin self-registration via e-mail OTP is now gated by `ENABLE_ADMIN_OTP_REGISTRATION` (`server/src/features.js`) and is **off by default** — login only.
+  - While off, `POST /api/auth/register/request-otp` and `POST /api/auth/register/verify-otp` answer `403` with a clear Indonesian message, the login page replaces the "Daftar Sekarang" link with a short notice, and `/api/config` exposes `adminOtpRegistrationEnabled` so the client can hide the entry point.
+  - Nothing was removed: routes, OTP store, SMTP delivery and every registration screen stay intact and can be re-enabled with `ENABLE_ADMIN_OTP_REGISTRATION=true`.
+  - `.env` is now also loaded from `server/.env` (next to the server package) in addition to the working directory.
 - **Admin Portal Access & Dedicated Login URL**:
   - The admin login form is now served exclusively by the API server (`http://localhost:5000/login`); the portal itself stays on `/admin`.
   - Opening `/admin` or `/login` from any other origin (e.g. the Vite dev server on `:3000`) now forwards the browser to `http://localhost:5000/login` instead of rendering a login form that cannot reach the API.
