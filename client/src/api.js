@@ -87,6 +87,12 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ email, password }),
     }),
+  // Direct admin registration (no OTP email verification)
+  registerAdmin: (name, email, password) =>
+    request(`/auth/register`, {
+      method: "POST",
+      body: JSON.stringify({ name, email, password }),
+    }),
   // OTP-based registration
   requestOtp: (name, email, password) =>
     request(`/auth/register/request-otp`, {

@@ -8,7 +8,7 @@ import authRoutes from "./routes/authRoutes.js";
 import guestRoutes from "./routes/guestRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import { securityHeaders, apiLimiter } from "./security.js";
-import { isAdminOtpRegistrationEnabled } from "./features.js";
+import { isAdminOtpRegistrationEnabled, isAdminRegistrationEnabled } from "./features.js";
 
 dotenv.config();
 
@@ -87,6 +87,7 @@ app.get("/api/config", (req, res) => {
     adminDomain: process.env.ADMIN_DOMAIN || currentOrigin,
     googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || "",
     // Feature flags — see server/src/features.js
+    adminRegistrationEnabled: isAdminRegistrationEnabled(),
     adminOtpRegistrationEnabled: isAdminOtpRegistrationEnabled(),
   });
 });

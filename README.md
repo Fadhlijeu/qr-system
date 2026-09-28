@@ -100,20 +100,31 @@ deleting only the rows of the `admins` table has the same effect.
 Flags live in `server/src/features.js` and are read from the environment, so a
 feature can be parked without deleting its code:
 
-| Flag | Default | Effect when off |
+| Flag | Default | Effect |
 | --- | --- | --- |
-| `ENABLE_ADMIN_OTP_REGISTRATION` | `false` (**off**) | Admin self-registration via e-mail OTP is disabled: `/api/auth/register/request-otp` and `/api/auth/register/verify-otp` answer `403` and the "Daftar Sekarang" link is replaced by a notice on the login page. Login itself keeps working normally. |
+| `ENABLE_ADMIN_REGISTRATION` | `true` (on) | Master switch for the "Daftar Akun Admin" flow. When off, `/api/auth/register*` answers `403` and the login page hides the "Daftar Sekarang" link. |
+| `ENABLE_ADMIN_OTP_REGISTRATION` | `false` (**off**) | E-mail verification for new admin accounts. **Off** → `POST /api/auth/register` creates the account straight away (no code to wait for). **On** → registration must go through `/api/auth/register/request-otp` + `/api/auth/register/verify-otp`, and direct registration is rejected so the e-mail check cannot be bypassed. |
+
+Login (`POST /api/auth/login`) is never affected by these flags. The OTP flow
+(routes, OTP store, SMTP delivery and the verification screen) is always kept in
+the codebase — a flag only parks it.
 
 Create a `.env` in the repo root (when running `npm start` / `npm run dev` from the
 root) **or** in `server/.env` (when starting from the `server/` folder) — both are
 picked up — then set:
 
 ```bash
-ENABLE_ADMIN_OTP_REGISTRATION=true    # turn OTP e-mail registration back on
-ENABLE_ADMIN_OTP_REGISTRATION=false   # keep it off (default)
+ENABLE_ADMIN_REGISTRATION=true        # open/close admin signup (default: true)
+ENABLE_ADMIN_OTP_REGISTRATION=false   # off: register instantly, no OTP e-mail (default)
+ENABLE_ADMIN_OTP_REGISTRATION=true    # on: new accounts must be verified by OTP e-mail
 ```
 
 Restart the server after changing a flag.
+
+> ⚠ While `ENABLE_ADMIN_OTP_REGISTRATION` is off, anyone who can reach the admin
+> portal can create an admin account. Close public signup with
+> `ENABLE_ADMIN_REGISTRATION=false` once your panitia accounts exist.
+
 
 
 

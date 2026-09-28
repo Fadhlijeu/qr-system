@@ -3,14 +3,43 @@ import bcrypt from "bcryptjs";
 import nodemailer from "nodemailer";
 import { db } from "../db.js";
 import { signToken, requireAdmin } from "../auth.js";
-import { loginLimiter, otpLimiter } from "../security.js";
-import { isAdminOtpRegistrationEnabled } from "../features.js";
+import { loginLimiter, otpLimiter, adminRegisterLimiter } from "../security.js";
+import { isAdminOtpRegistrationEnabled, isAdminRegistrationEnabled } from "../features.js";
 
 const router = Router();
 
-// Message returned while the OTP registration feature flag is off.
+// ─── Registration feature-flag messages ──────────────────────────────────────
+const REGISTRATION_DISABLED_MESSAGE =
+  "Pendaftaran akun admin sedang dinonaktifkan. Hubungi pengelola sistem untuk pembuatan akun.";
 const OTP_DISABLED_MESSAGE =
-  "Pendaftaran akun admin lewat OTP email sedang dinonaktifkan sementara. Hubungi pengelola sistem untuk pembuatan akun.";
+  "Verifikasi OTP email sedang dinonaktifkan, akun admin dibuat langsung tanpa kode OTP.";
+const OTP_REQUIRED_MESSAGE =
+  "Verifikasi OTP email sedang aktif. Daftarkan akun lewat alur OTP email.";
+
+/**
+ * Registration itself is only available while the master flag is on.
+ * Returns an error payload when blocked, otherwise `null`.
+ */
+function registrationBlock() {
+  if (!isAdminRegistrationEnabled()) {
+    return { error: REGISTRATION_DISABLED_MESSAGE, code: "ADMIN_REGISTRATION_DISABLED" };
+  }
+  return null;
+}
+
+/**
+ * OTP registration additionally needs the OTP flag. The flow (routes, OTP store,
+ * SMTP delivery, OTP screens) is always kept in the codebase — it is only parked
+ * while the flag is off.
+ */
+function otpRegistrationBlock() {
+  const blocked = registrationBlock();
+  if (blocked) return blocked;
+  if (!isAdminOtpRegistrationEnabled()) {
+    return { error: OTP_DISABLED_MESSAGE, code: "ADMIN_OTP_REGISTRATION_DISABLED" };
+  }
+  return null;
+}
 
 // ─── In-memory OTP store ─────────────────────────────────────────────────────
 // { email → { code, expiresAt, name, password_hash } }
@@ -101,12 +130,68 @@ router.post("/login", loginLimiter, (req, res) => {
   });
 });
 
-// POST /auth/register/request-otp — Step 1: validate & send OTP (with anti-spam rate limiter)
-router.post("/register/request-otp", otpLimiter, async (req, res) => {
-  // Feature flag: OTP e-mail registration is temporarily disabled (code kept).
-  if (!isAdminOtpRegistrationEnabled()) {
-    return res.status(403).json({ error: OTP_DISABLED_MESSAGE, code: "ADMIN_OTP_REGISTRATION_DISABLED" });
+// POST /auth/register — Direct admin registration (no OTP email verification).
+// Active while `ENABLE_ADMIN_OTP_REGISTRATION` is off; once the organizer turns
+// OTP verification back on, accounts must be created through the OTP flow below.
+router.post("/register", adminRegisterLimiter, (req, res) => {
+  const blocked = registrationBlock();
+  if (blocked) return res.status(403).json(blocked);
+
+  // OTP verification on -> the e-mail code must not be skipped.
+  if (isAdminOtpRegistrationEnabled()) {
+    return res.status(403).json({ error: OTP_REQUIRED_MESSAGE, code: "ADMIN_OTP_REQUIRED" });
   }
+
+  const { name, email, password } = req.body;
+
+  if (!name?.trim() || !email?.trim() || !password?.trim()) {
+    return res.status(400).json({ error: "Nama, email, dan kata sandi wajib diisi." });
+  }
+  if (password.trim().length < 8) {
+    return res.status(400).json({ error: "Kata sandi minimal 8 karakter." });
+  }
+  if (name.trim().length > 100) {
+    return res.status(400).json({ error: "Nama maksimal 100 karakter." });
+  }
+
+  const cleanName = name.trim();
+  const cleanEmail = email.trim().toLowerCase().slice(0, 150);
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(cleanEmail)) {
+    return res.status(400).json({ error: "Format email tidak valid." });
+  }
+
+  const existing = db.prepare("SELECT id FROM admins WHERE email = ?").get(cleanEmail);
+  if (existing) {
+    return res.status(400).json({ error: "Email sudah terdaftar. Silakan login." });
+  }
+
+  const salt = bcrypt.genSaltSync(10);
+  const password_hash = bcrypt.hashSync(password.trim(), salt);
+
+  const result = db.prepare("INSERT INTO admins (name, email, password_hash) VALUES (?, ?, ?)").run(
+    cleanName,
+    cleanEmail,
+    password_hash
+  );
+
+  const adminId = Number(result.lastInsertRowid);
+  const admin = db.prepare("SELECT id, name, email FROM admins WHERE id = ?").get(adminId);
+  const token = signToken({ id: admin.id, email: admin.email, name: admin.name });
+
+  res.status(201).json({
+    token,
+    admin,
+    message: "Akun admin berhasil dibuat tanpa verifikasi OTP.",
+  });
+});
+
+// POST /auth/register/request-otp — Step 1: validate & send OTP (with anti-spam rate limiter)
+// Parked while the OTP feature flag is off; the implementation is fully kept.
+router.post("/register/request-otp", otpLimiter, async (req, res) => {
+  const blocked = otpRegistrationBlock();
+  if (blocked) return res.status(403).json(blocked);
 
   const { name, email, password } = req.body;
 
@@ -161,11 +246,10 @@ router.post("/register/request-otp", otpLimiter, async (req, res) => {
 });
 
 // POST /auth/register/verify-otp — Step 2: verify OTP & create account
+// Parked while the OTP feature flag is off; the implementation is fully kept.
 router.post("/register/verify-otp", (req, res) => {
-  // Feature flag: OTP e-mail registration is temporarily disabled (code kept).
-  if (!isAdminOtpRegistrationEnabled()) {
-    return res.status(403).json({ error: OTP_DISABLED_MESSAGE, code: "ADMIN_OTP_REGISTRATION_DISABLED" });
-  }
+  const blocked = otpRegistrationBlock();
+  if (blocked) return res.status(403).json(blocked);
 
   const { email, otp } = req.body;
   if (!email || !otp) {

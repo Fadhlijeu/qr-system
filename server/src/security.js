@@ -60,6 +60,17 @@ export const registerLimiter = rateLimit({
   },
 });
 
+// Admin Account Registration Limiter (abuse protection on open admin signup)
+export const adminRegisterLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: 5, // 5 new admin accounts per 10 minutes per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: "Terlalu banyak percobaan pendaftaran akun. Silakan coba lagi dalam 10 menit.",
+  },
+});
+
 // Check-in Scanner Limiter (QR flooding protection)
 export const checkinLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute

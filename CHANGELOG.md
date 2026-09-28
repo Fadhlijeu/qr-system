@@ -55,10 +55,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Event registration slugs are now generated as pure unguessable alphanumeric tokens (`/e/evt-[random20]`) with no event title leakage, set to read-only in forms.
 - **Git Hygiene**:
   - Added `_adminator_ref/` and temporary dump files to `.gitignore` to keep repositories clean.
-- **Admin OTP E-mail Registration Temporarily Disabled (Feature Flag)**:
-  - Admin self-registration via e-mail OTP is now gated by `ENABLE_ADMIN_OTP_REGISTRATION` (`server/src/features.js`) and is **off by default** — login only.
-  - While off, `POST /api/auth/register/request-otp` and `POST /api/auth/register/verify-otp` answer `403` with a clear Indonesian message, the login page replaces the "Daftar Sekarang" link with a short notice, and `/api/config` exposes `adminOtpRegistrationEnabled` so the client can hide the entry point.
-  - Nothing was removed: routes, OTP store, SMTP delivery and every registration screen stay intact and can be re-enabled with `ENABLE_ADMIN_OTP_REGISTRATION=true`.
+- **Admin Registration Without OTP (Feature Flags)**:
+  - Admin self-registration is gated by two flags in `server/src/features.js`: `ENABLE_ADMIN_REGISTRATION` (master switch, default **on**) and `ENABLE_ADMIN_OTP_REGISTRATION` (e-mail verification, default **off**).
+  - New `POST /api/auth/register` creates an admin account directly (name, e-mail, password) and returns a session token — no OTP e-mail to wait for — protected by the new `adminRegisterLimiter` (5 accounts / 10 min / IP).
+  - While the OTP flag is off, `POST /api/auth/register/request-otp` and `POST /api/auth/register/verify-otp` answer `403` with a clear Indonesian message; once it is turned on, direct registration answers `403` instead, so e-mail verification can never be bypassed. Login is never affected by either flag.
+  - The register form adapts automatically — "Buat Akun" (instant) or "Kirim Kode OTP" (two-step verification screen) — and the whole "Daftar Sekarang" entry point disappears when the master flag is off. `/api/config` exposes both flags.
+  - Nothing was removed: routes, OTP store, SMTP delivery and every registration screen stay intact and can be switched back with `ENABLE_ADMIN_OTP_REGISTRATION=true`.
   - `.env` is now also loaded from `server/.env` (next to the server package) in addition to the working directory.
 - **Admin Portal Access & Dedicated Login URL**:
   - The admin login form is now served exclusively by the API server (`http://localhost:5000/login`); the portal itself stays on `/admin`.

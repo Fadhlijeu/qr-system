@@ -38,9 +38,11 @@ export function AdminLogin({ onLoginSuccess }) {
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
   const [devMode, setDevMode] = useState(false); // true if SMTP not configured
-  // Server feature flag: admin self-registration via e-mail OTP can be switched
-  // off without removing the flow (`ENABLE_ADMIN_OTP_REGISTRATION`).
-  const [otpRegistrationEnabled, setOtpRegistrationEnabled] = useState(null);
+  // Server feature flags (see server/src/features.js):
+  //   registrationEnabled  -> the "Daftar Akun Admin" flow is open
+  //   otpVerificationEnabled -> the account must be verified by e-mail OTP first
+  const [registrationEnabled, setRegistrationEnabled] = useState(true);
+  const [otpVerificationEnabled, setOtpVerificationEnabled] = useState(false);
 
   // ── Feature flags ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -48,12 +50,13 @@ export function AdminLogin({ onLoginSuccess }) {
     api
       .getConfig()
       .then((res) => {
-        if (!cancelled) setOtpRegistrationEnabled(res?.adminOtpRegistrationEnabled !== false);
+        if (cancelled) return;
+        setRegistrationEnabled(res?.adminRegistrationEnabled !== false);
+        setOtpVerificationEnabled(res?.adminOtpRegistrationEnabled === true);
       })
       .catch(() => {
-        // Config not reachable: keep the UI untouched, the register endpoints
-        // answer with a clear message on their own.
-        if (!cancelled) setOtpRegistrationEnabled(true);
+        // Config not reachable: keep the UI as-is, the register endpoints answer
+        // with a clear message on their own.
       });
     return () => {
       cancelled = true;
@@ -76,18 +79,26 @@ export function AdminLogin({ onLoginSuccess }) {
     }
   };
 
-  // ── Register Step 1: request OTP ───────────────────────────────────────────
-  const handleRequestOtp = async (e) => {
+  // ── Register: direct when OTP verification is off, OTP e-mail when it is on ─
+  const handleRegister = async (e) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      const res = await api.requestOtp(name, email, password);
-      setDevMode(res.devMode === true);
-      setMode("register_otp");
-      setSuccessMsg(res.message);
+      if (otpVerificationEnabled) {
+        // OTP flow (kept intact): ask for a code, then verify it on step 2.
+        const res = await api.requestOtp(name, email, password);
+        setDevMode(res.devMode === true);
+        setMode("register_otp");
+        setSuccessMsg(res.message);
+      } else {
+        // No OTP: the account is created immediately and the admin is logged in.
+        const res = await api.registerAdmin(name, email, password);
+        setAuthToken(res.token);
+        if (onLoginSuccess) onLoginSuccess(res.admin);
+      }
     } catch (err) {
-      setError(err.message || "Gagal mengirim OTP.");
+      setError(err.message || (otpVerificationEnabled ? "Gagal mengirim OTP." : "Gagal membuat akun."));
     } finally {
       setLoading(false);
     }
@@ -198,16 +209,16 @@ export function AdminLogin({ onLoginSuccess }) {
                 </button>
               </form>
 
-              {otpRegistrationEnabled === false ? (
-                <p style={{ marginTop: "20px", textAlign: "center", fontSize: "12.5px", color: "var(--t-muted)" }}>
-                  Pendaftaran akun admin lewat OTP email sedang dinonaktifkan sementara.
-                </p>
-              ) : (
+              {registrationEnabled ? (
                 <p style={{ marginTop: "20px", textAlign: "center", fontSize: "12.5px", color: "var(--t-muted)" }}>
                   Belum punya akun?{" "}
                   <button type="button" onClick={goToRegister} style={{ background: "none", border: "none", color: "var(--primary)", cursor: "pointer", fontWeight: 600, padding: 0 }}>
                     Daftar Sekarang
                   </button>
+                </p>
+              ) : (
+                <p style={{ marginTop: "20px", textAlign: "center", fontSize: "12.5px", color: "var(--t-muted)" }}>
+                  Pendaftaran akun admin sedang dinonaktifkan sementara.
                 </p>
               )}
             </>
@@ -218,12 +229,14 @@ export function AdminLogin({ onLoginSuccess }) {
             <>
               <h2 style={{ fontSize: "20px", fontWeight: 700, marginBottom: "6px" }}>Daftar Akun Admin</h2>
               <p style={{ fontSize: "13px", color: "var(--t-muted)", marginBottom: "20px" }}>
-                Kami akan mengirim kode OTP ke email Anda untuk verifikasi.
+                {otpVerificationEnabled
+                  ? "Kami akan mengirim kode OTP ke email Anda untuk verifikasi."
+                  : "Verifikasi OTP email sedang dinonaktifkan — akun admin langsung dibuat tanpa kode OTP."}
               </p>
 
               {error && <Alert tone="danger">{error}</Alert>}
 
-              <form className="auth-form" onSubmit={handleRequestOtp}>
+              <form className="auth-form" onSubmit={handleRegister}>
                 <div className="field">
                   <label className="field-label" htmlFor="reg-name">Nama Lengkap <span className="req">*</span></label>
                   <div className="input-icon">
@@ -281,7 +294,9 @@ export function AdminLogin({ onLoginSuccess }) {
                 </div>
 
                 <button className="btn btn--primary auth-submit" type="submit" disabled={loading}>
-                  {loading ? "Mengirim OTP..." : <><span>Kirim Kode OTP</span><svg viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7" /></svg></>}
+                  {loading
+                    ? (otpVerificationEnabled ? "Mengirim OTP..." : "Membuat akun...")
+                    : <><span>{otpVerificationEnabled ? "Kirim Kode OTP" : "Buat Akun"}</span><svg viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7" /></svg></>}
                 </button>
               </form>
 
