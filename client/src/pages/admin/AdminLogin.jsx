@@ -1,6 +1,32 @@
 import React, { useState } from "react";
 import { api, setAuthToken } from "../../api";
 
+/**
+ * Compact alert box shared by every auth step.
+ * `.alert` is a 3-column grid (icon | message | close), so the message has to
+ * live inside `.body`; text placed directly as a grid child is squeezed into
+ * the 24px icon column and wraps one word per line.
+ */
+function Alert({ tone = "danger", children }) {
+  return (
+    <div className={`alert ${tone}`} style={{ marginBottom: "16px" }}>
+      <span className="ico">
+        <svg viewBox="0 0 24 24">
+          {tone === "success" ? (
+            <path d="M20 6 9 17l-5-5" />
+          ) : (
+            <>
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 7.5V13M12 16.5v.01" />
+            </>
+          )}
+        </svg>
+      </span>
+      <div className="body" style={{ fontSize: "13px" }}>{children}</div>
+    </div>
+  );
+}
+
 export function AdminLogin({ onLoginSuccess }) {
   // 'login' | 'register_form' | 'register_otp'
   const [mode, setMode] = useState("login");
@@ -105,11 +131,7 @@ export function AdminLogin({ onLoginSuccess }) {
                 Masuk ke portal admin untuk mengelola acara.
               </p>
 
-              {error && (
-                <div className="alert danger" style={{ marginBottom: "16px", padding: "10px 14px" }}>
-                  <span style={{ fontSize: "13px" }}>{error}</span>
-                </div>
-              )}
+              {error && <Alert tone="danger">{error}</Alert>}
 
               <form className="auth-form" onSubmit={handleLogin}>
                 <div className="field">
@@ -172,11 +194,7 @@ export function AdminLogin({ onLoginSuccess }) {
                 Kami akan mengirim kode OTP ke email Anda untuk verifikasi.
               </p>
 
-              {error && (
-                <div className="alert danger" style={{ marginBottom: "16px", padding: "10px 14px" }}>
-                  <span style={{ fontSize: "13px" }}>{error}</span>
-                </div>
-              )}
+              {error && <Alert tone="danger">{error}</Alert>}
 
               <form className="auth-form" onSubmit={handleRequestOtp}>
                 <div className="field">
@@ -261,24 +279,14 @@ export function AdminLogin({ onLoginSuccess }) {
               </div>
 
               {devMode && (
-                <div className="alert" style={{ background: "#fffbeb", border: "1px solid #f59e0b", borderRadius: "8px", padding: "10px 14px", marginBottom: "16px" }}>
-                  <span style={{ fontSize: "12.5px", color: "#92400e" }}>
-                    ⚠ Mode Dev: SMTP belum dikonfigurasi. OTP tercetak di console server.
-                  </span>
-                </div>
+                <Alert tone="warning">
+                  <strong>Mode Dev:</strong> SMTP belum dikonfigurasi, kode OTP tercetak di console server.
+                </Alert>
               )}
 
-              {successMsg && !error && (
-                <div className="alert success" style={{ marginBottom: "16px", padding: "10px 14px" }}>
-                  <span style={{ fontSize: "13px" }}>{successMsg}</span>
-                </div>
-              )}
+              {successMsg && !error && <Alert tone="success">{successMsg}</Alert>}
 
-              {error && (
-                <div className="alert danger" style={{ marginBottom: "16px", padding: "10px 14px" }}>
-                  <span style={{ fontSize: "13px" }}>{error}</span>
-                </div>
-              )}
+              {error && <Alert tone="danger">{error}</Alert>}
 
               <form className="auth-form" onSubmit={handleVerifyOtp}>
                 <div className="field">

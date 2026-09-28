@@ -55,6 +55,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Event registration slugs are now generated as pure unguessable alphanumeric tokens (`/e/evt-[random20]`) with no event title leakage, set to read-only in forms.
 - **Git Hygiene**:
   - Added `_adminator_ref/` and temporary dump files to `.gitignore` to keep repositories clean.
+- **Admin Portal Access & Dedicated Login URL**:
+  - The admin login form is now served exclusively by the API server (`http://localhost:5000/login`); the portal itself stays on `/admin`.
+  - Opening `/admin` or `/login` from any other origin (e.g. the Vite dev server on `:3000`) now forwards the browser to `http://localhost:5000/login` instead of rendering a login form that cannot reach the API.
+  - Admin URLs are canonicalized client-side: `/login` while signed out, `/admin` once signed in.
+  - The API origin used for that redirect is derived from the current hostname (`VITE_SERVER_ORIGIN` env override for custom hosts/ports).
 
 ### Removed
 - **Pengaturan (Settings) Pruning (`AdminSettings`)**:
@@ -62,6 +67,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Retained an ultra-clean, focused settings menu: Basic Information, Event Defaults, Address (Saved Venues), Social Links, and Email Templates.
 
 ### Fixed
+- **Vertical Alert / Error Messages (`AdminLogin`)**:
+  - Auth alerts placed a bare `<span>` inside the three-column `.alert` grid (`24px 1fr auto`), so the message was squeezed into the 24px icon track and wrapped one word per line (`Failed / to / fetch`).
+  - Login, registration, OTP-warning and success alerts now use the standard `ico` + `body` structure, and `index.css` gained an alert-grid safety net that pushes any message child into the flexible column and keeps the text flowing horizontally.
+  - Raw browser network failures (`Failed to fetch`) are now translated into a readable Indonesian message naming the server origin that could not be reached.
 - **Dashboard Label Visibility**:
   - Restored clear and prominent `Dashboard` title and eyebrow labels on both active event views and empty states in `AdminDashboard`, ensuring users always have clear section context.
 - **Map Tile Watermark & Access Blocked (ESRI World Street Map)**:

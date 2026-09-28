@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { api, getAuthToken } from "./api";
+import { api, getAuthToken, isAdminPortalOrigin, ADMIN_LOGIN_URL } from "./api";
 import { GuestRegister } from "./pages/guest/GuestRegister";
 import { TicketView } from "./pages/guest/TicketView";
 import { AdminLogin } from "./pages/admin/AdminLogin";
@@ -13,6 +13,27 @@ import { AdminSettings } from "./pages/admin/AdminSettings";
 import { GuestOrganizer } from "./pages/guest/GuestOrganizer";
 import { AdminLayout } from "./components/AdminLayout";
 import { Loader2 } from "lucide-react";
+
+/**
+ * Shown when the admin portal is loaded from an origin that is not the API
+ * server (e.g. the Vite dev server on :3000). The login form must not be
+ * reachable from there, so the browser is forwarded to the API server instead.
+ */
+function RedirectingToAdminPortal() {
+  useEffect(() => {
+    window.location.replace(ADMIN_LOGIN_URL);
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center gap-2 px-6 text-center text-xs text-slate-500">
+      <Loader2 className="w-4 h-4 animate-spin text-slate-700" />
+      <span>Mengalihkan ke portal admin di {ADMIN_LOGIN_URL} …</span>
+      <a href={ADMIN_LOGIN_URL} className="font-semibold text-slate-800 underline">
+        Buka {ADMIN_LOGIN_URL}
+      </a>
+    </div>
+  );
+}
 
 export function App() {
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
@@ -48,6 +69,20 @@ export function App() {
     checkAuth();
   }, []);
 
+  // Keep admin URLs canonical: the login form lives on `/login` and the portal
+  // lives on `/admin`, both only on the API server origin.
+  useEffect(() => {
+    const current = currentPath.toLowerCase();
+    const isAdminRoute = current.startsWith("/admin") || current === "/login";
+    if (!isAdminRoute || !isAdminPortalOrigin() || authChecking) return;
+
+    const canonical = adminUser ? "/admin" : "/login";
+    if (current !== canonical) {
+      window.history.replaceState({}, "", canonical);
+      setCurrentPath(canonical);
+    }
+  }, [currentPath, adminUser, authChecking]);
+
   // Fetch events list and auto-select active event
   useEffect(() => {
     if (adminUser) {
@@ -76,8 +111,15 @@ export function App() {
     return <TicketView ticketCode={ticketCode} />;
   }
 
-  // 2. Admin Portal: /admin
-  if (path.startsWith("/admin")) {
+  // 2. Admin Portal: /login (login form) and /admin (dashboard)
+  if (path.startsWith("/admin") || path === "/login") {
+    // The login form is only served from the API server origin. Anywhere else
+    // (e.g. the Vite dev server on :3000) the browser is forwarded to the real
+    // admin portal instead of rendering a login form that cannot reach the API.
+    if (!isAdminPortalOrigin()) {
+      return <RedirectingToAdminPortal />;
+    }
+
     if (authChecking) {
       return (
         <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center text-xs text-slate-500 gap-2">

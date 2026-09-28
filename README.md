@@ -59,21 +59,43 @@ The server will start at `http://localhost:5000`.
 
 ### 4. For Local Development (Hot Reloading)
 ```bash
-# Terminal 1: Backend
-npm run server
+# Terminal 1: Backend (Express API + built client) on :5000
+npm run dev:server
 
-# Terminal 2: Frontend (Vite)
-npm run client
+# Terminal 2: Frontend hot-reload server (Vite) on :3000
+npm run dev:client
 ```
+
+> **Ports matter:** the guest registration pages work on both servers, but the
+> admin login form is served by the API server only (`http://localhost:5000`).
+> Opening `/admin` or `/login` on another origin (e.g. `http://localhost:3000`)
+> redirects the browser to `http://localhost:5000/login`.
 
 ---
 
 ## 🔑 Default Admin Credentials
 
-- **URL**: `http://localhost:5000/admin`
+- **Login URL**: `http://localhost:5000/login` (the portal itself is `/admin`)
 - **Email**: `fadhli@gmail.com`
 - **Password**: `GrandOpening2026!`
 - **Sample Event**: `http://localhost:5000/e/grand-opening`
+
+### Reset Admin Accounts
+Admin accounts are stored in `server/data/events.db` (SQLite, git-ignored). To wipe
+every registered account and start from a clean slate:
+
+```bash
+# Windows
+del server\data\events.db*
+
+# macOS / Linux
+rm -f server/data/events.db*
+```
+
+Start the server again afterwards: `server/src/db.js` re-creates the default admin
+(`fadhli@gmail.com` / `GrandOpening2026!`) whenever that account is missing, so
+deleting only the rows of the `admins` table has the same effect.
+
 
 ---
 

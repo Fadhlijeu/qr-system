@@ -1,5 +1,28 @@
 const API_BASE = "/api";
 
+/**
+ * Origin that hosts the Admin Portal (login form + dashboard).
+ *
+ * - Production: the Express server serves this bundle itself, so the portal
+ *   lives on the exact same origin as the page.
+ * - Development: Vite (default :3000) only proxies `/api`; the Express server
+ *   (`PORT=5000`) is the one that serves the admin portal, so the form has to be
+ *   opened there. The hostname of the dev machine is reused so the redirect also
+ *   works when the dev server is opened from a LAN IP. Override the whole origin
+ *   with `VITE_SERVER_ORIGIN`.
+ */
+export const SERVER_ORIGIN = import.meta.env.DEV
+  ? import.meta.env.VITE_SERVER_ORIGIN || `http://${window.location.hostname}:5000`
+  : window.location.origin;
+
+/** Dedicated URL of the admin login form (served by the API server only). */
+export const ADMIN_LOGIN_URL = `${SERVER_ORIGIN}/login`;
+
+/** True when the current page is already served from the admin portal origin. */
+export function isAdminPortalOrigin() {
+  return window.location.origin === SERVER_ORIGIN;
+}
+
 export function getAuthToken() {
   return localStorage.getItem("admin_token");
 }
@@ -23,10 +46,19 @@ async function request(endpoint, options = {}) {
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  let response;
+  try {
+    response = await fetch(`${API_BASE}${endpoint}`, {
+      ...options,
+      headers,
+    });
+  } catch (err) {
+    // Network-level failure: server down, wrong port, offline or blocked CORS.
+    // Surface a readable message instead of the raw browser "Failed to fetch".
+    throw new Error(
+      `Tidak dapat terhubung ke server ${SERVER_ORIGIN}. Pastikan server sedang berjalan, lalu coba lagi.`
+    );
+  }
 
   const data = await response.json().catch(() => ({}));
 

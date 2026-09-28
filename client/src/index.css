@@ -380,3 +380,32 @@
   box-shadow: none !important;
 }
 
+
+/* ── Alert Layout Safety Net ────────────────────────────────────────────────
+ * `.alert` is a 3-column grid (icon | message | close). A message placed
+ * directly as a grid child gets squeezed into the 24px icon column and wraps
+ * one word per line ("Failed / to / fetch"), so force every message child into
+ * the flexible message column and keep the text flowing horizontally.
+ */
+.alert > .body,
+.alert > p,
+.alert > span:not(.ico),
+.alert > strong,
+.alert > div:not(.ico):not(.close) {
+  grid-column: 2 / -1;
+  min-width: 0;
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: break-word;
+  writing-mode: horizontal-tb;
+}
+
+/* Icon-less alerts (a lone message child) may use the full alert width. */
+.alert > .body:only-child,
+.alert > p:only-child,
+.alert > span:only-child:not(.ico),
+.alert > strong:only-child,
+.alert > div:only-child:not(.ico):not(.close) {
+  grid-column: 1 / -1;
+}
+
