@@ -1,159 +1,220 @@
-# Minimal Event Registration & QR Check-in System
+# QR System
 
-A lightweight, high-performance event registration and QR check-in platform designed for speed, simplicity, and zero maintenance overhead.
+<div align="center">
 
-Built as an independent, single-process application with **Node.js (Express) + Native SQLite (`node:sqlite`) + React (Vite & Tailwind CSS)**.
+![Version](https://img.shields.io/badge/version-1.0.0-blue.svg?style=flat-square)
+![Runtime](https://img.shields.io/badge/runtime-Node.js%2022%2B%20%7C%20node:sqlite-green.svg?style=flat-square)
+![Frontend](https://img.shields.io/badge/frontend-React%2018%20%7C%20Vite%20%7C%20Tailwind-61DAFB.svg?style=flat-square)
+![Backend](https://img.shields.io/badge/backend-Express.js-000000.svg?style=flat-square)
+![Database](https://img.shields.io/badge/database-Native%20SQLite-003B57.svg?style=flat-square)
+![License](https://img.shields.io/badge/license-MIT-success.svg?style=flat-square)
+
+**Universal Event Registration, E-Ticketing & High-Speed QR Check-in Platform**  
+*Ultra-lightweight, zero-maintenance event management designed for high-throughput guest reception.*
+
+[System Overview](#-overview) • [Dual Portals](#-dual-portal-architecture) • [Workflow](#-system-workflow) • [Quick Start](#-quick-start) • [Feature Flags](#-feature-flags--configuration) • [Project Structure](#-project-structure)
+
+</div>
 
 ---
 
-## 🎯 System Overview
+## 🌟 Overview
 
-Strictly divided into two simple sides:
+**QR System** is an independent, high-performance event registration and QR check-in platform engineered for speed, simplicity, and zero maintenance overhead.
 
-### 1. ADMIN (`/admin`)
-- **Login**: Secure JWT authentication.
-- **Event Setup**: Create and customize events (date, time, location, capacity).
-- **Shareable Link**: Instant one-click copy of the public registration URL (`/e/:slug`).
-- **Dashboard**: Real-time metrics (Total Registered, Checked-in, Not Checked-in, Attendance %), and recent check-ins stream.
-- **Participants**: Filterable and searchable attendee table with manual check-in toggle and direct WhatsApp links.
-- **QR Scanner**: Live camera barcode scanner + manual code input with audio beeps and 3 instant states:
-  - 🟢 **CHECK-IN SUCCESS** (Valid ticket, marks attendee as present)
-  - 🟡 **ALREADY CHECKED IN** (Duplicate scan warning with previous check-in time)
-  - 🔴 **INVALID QR** (Fake or mismatched event ticket)
-- **Data Export**: Clean CSV download with attendee details and check-in timestamps.
+Whether organizing **Grand Openings**, **Corporate Summits**, **Tech Conferences**, **Product Launches**, or **VIP Receptions**, QR System delivers a seamless, friction-free experience for attendees and gives event organizers a real-time command dashboard at the registration desk.
 
-### 2. GUEST (`/e/:slug`)
-- **Direct Access**: Guest clicks the event link and immediately sees the clean registration form.
-- **Minimal Form**:
-  - Nama Lengkap (Full Name)
-  - Nomor WhatsApp
-  - Alamat Email
-  - Instansi / Organisasi / Perusahaan
-- **Instant E-Ticket**: Submit directly generates an E-Ticket with a unique, cryptographically random QR code (`TKT-XXXXXX`).
-- **Zero Friction**: No passwords, no login, no checkout, no payment tiers.
-- **Save Ticket**: Guests can instantly save/download the QR code image or print the boarding-pass style ticket.
+Built as an independent full-stack application using **Node.js (Express) + Native SQLite (`node:sqlite`) + React (Vite & Tailwind CSS)**, it eliminates heavy database daemon dependencies (PostgreSQL/MySQL/Redis) and runs effortlessly anywhere.
+
+---
+
+## 🎯 Dual-Portal Architecture
+
+### 1. Guest Registration Portal (`/e/:slug`)
+- **Direct Link Access**: Attendees visit the branded event URL and register in seconds.
+- **Minimal, Frictionless Form**:
+  - Full Name (Nama Lengkap)
+  - WhatsApp Number
+  - Email Address
+  - Company / Organization / Institution
+- **Zero Friction**: No passwords, no required account creation, and no app installation.
+- **Instant Cryptographic E-Ticket**: Immediately generates a unique, cryptographically secure ticket code (`TKT-XXXXXX`) with an scannable QR code.
+- **Ticket Preservation**: Attendees can save the high-resolution QR image or print the boarding-pass style ticket directly to Apple Wallet / mobile gallery.
+
+### 2. Admin Command Center (`/admin`)
+- **Secure Access**: JWT-based authentication with configurable admin registration controls.
+- **Event Management**: Create and configure multiple events (name, slug, date, time, location, capacity, cover banner).
+- **Real-Time KPI Dashboard**:
+  - Total Registered Attendees
+  - Checked-In Count
+  - Pending Arrivals (Belum Hadir)
+  - Live Attendance Rate %
+  - Auto-refreshing 15s polling & instant window-focus sync
+- **High-Speed QR Scanner**:
+  - Integrated live camera scanner with high-frame barcode decoding.
+  - Hardware USB HID scanner support and keyboard-wedge input.
+  - Manual code search fallback.
+  - Audio and visual instant verification states:
+    - 🟢 **CHECK-IN SUCCESS** — Ticket verified and marked as attended.
+    - 🟡 **ALREADY CHECKED IN** — Warning alert with previous check-in timestamp.
+    - 🔴 **INVALID QR** — Alert for fraudulent or mismatched tickets.
+- **Interactive Attendee Table**: Full search, filtering by status, manual toggle check-in, and 1-click WhatsApp messaging links.
+- **Data Export**: Clean CSV download with attendee details and check-in timestamps ready for post-event analytics.
+
+---
+
+## 🔄 System Workflow
+
+```text
+  Guest Visits (/e/:slug)
+            │
+            ▼
+  [ Fill Minimal Form ] ────► Cryptographic Token Generated (TKT-XXXXXX)
+            │                                 │
+            ▼                                 ▼
+   [ Instant E-Ticket ]               Saved in node:sqlite
+  (Download QR / Print)                       │
+                                              │
+  =================== AT THE VENUE ============│======================
+                                              │
+  Check-in Desk Scanner (/admin) ◄────────────┘
+            │
+     [ Scan QR Code ]
+            │
+   ┌────────┴────────────────────────┬────────────────────────┐
+   ▼                                 ▼                        ▼
+🟢 VALID TICKET                  🟡 DUPLICATE TICKET       🔴 INVALID
+Marks Checked-in with timestamp   Displays previous time    Rejects invalid code
+Audio Chime: Success              Audio Chime: Warning      Audio Chime: Error
+```
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology | Details |
+|---|---|---|
+| **Frontend** | [React 18](https://react.dev/) + [Vite](https://vitejs.dev/) | Ultra-fast client build & responsive interface |
+| **Styling** | [Tailwind CSS](https://tailwindcss.com/) | Modern utility-first responsive layout |
+| **QR Handling** | `html5-qrcode` + `qrcode.react` | High-speed webcam scanner & dynamic QR generation |
+| **Backend** | [Express](https://expressjs.com/) | RESTful API server with JWT authentication |
+| **Database** | Native SQLite (`node:sqlite`) | Embedded zero-config ACID database in Node 22+ |
+| **Security** | Helmet, CORS, Rate-Limiting, BcryptJS | Production-grade security middleware suite |
 
 ---
 
 ## ⚡ Quick Start
 
 ### Prerequisites
-- Node.js v22 or v24+ (uses native `node:sqlite`)
+- **Node.js**: v22+ or v24+ *(uses native `node:sqlite` module)*
+- **npm**: v9+
 
-### 1. Install Dependencies
+### 1. Clone & Install Dependencies
+
 ```bash
+git clone https://github.com/Fadhlijeu/qr-system.git
+cd qr-system
+
+# Install root dependencies
 npm install
+
+# Install client dependencies
 cd client && npm install && cd ..
 ```
 
 ### 2. Build Frontend
+
 ```bash
 npm run build
 ```
 
 ### 3. Start Production Server
+
 ```bash
 npm start
 ```
-The server will start at `http://localhost:5000`.
+The application will launch at `http://localhost:5000`.
 
-### 4. For Local Development (Hot Reloading)
+### 4. Local Development (Hot Reloading)
+
 ```bash
-# Terminal 1: Backend (Express API + built client) on :5000
+# Run both Backend (:5000) and Frontend Vite (:3000) concurrently:
+npm run dev
+
+# Or run separately in two terminals:
+# Terminal 1: Backend Express API
 npm run dev:server
 
-# Terminal 2: Frontend hot-reload server (Vite) on :3000
+# Terminal 2: Frontend Vite hot-reload
 npm run dev:client
 ```
-
-> **Ports matter:** the guest registration pages work on both servers, but the
-> admin login form is served by the API server only (`http://localhost:5000`).
-> Opening `/admin` or `/login` on another origin (e.g. `http://localhost:3000`)
-> redirects the browser to `http://localhost:5000/login`.
 
 ---
 
 ## 🔑 Default Admin Credentials
 
-- **Login URL**: `http://localhost:5000/login` (the portal itself is `/admin`)
-- **Email**: `fadhli@gmail.com`
-- **Password**: `GrandOpening2026!`
+- **Admin Login Portal**: `http://localhost:5000/login` (Dashboard: `/admin`)
+- **Default Email**: `fadhli@gmail.com`
+- **Default Password**: `GrandOpening2026!`
 - **Sample Event**: `http://localhost:5000/e/grand-opening`
 
-### Reset Admin Accounts
-Admin accounts are stored in `server/data/events.db` (SQLite, git-ignored). To wipe
-every registered account and start from a clean slate:
+> 💡 **Resetting Admin Accounts:** SQLite data is stored in `server/data/events.db` (git-ignored). To wipe and reset to the default account, remove the file (`del server\data\events.db*` on Windows or `rm -f server/data/events.db*` on Linux/macOS) and restart the server.
+
+---
+
+## ⚙️ Feature Flags & Configuration
+
+Environment variables can be placed in `.env` in the project root or `server/.env`:
+
+| Variable | Default | Description |
+|---|---|---|
+| `PORT` | `5000` | Port for Express API server |
+| `JWT_SECRET` | `super-secret-key` | Secret key for JWT signing |
+| `ENABLE_ADMIN_REGISTRATION` | `true` | Allows or restricts public admin account creation |
+| `ENABLE_ADMIN_OTP_REGISTRATION` | `false` | Requires OTP email verification before admin activation |
 
 ```bash
-# Windows
-del server\data\events.db*
-
-# macOS / Linux
-rm -f server/data/events.db*
+ENABLE_ADMIN_REGISTRATION=true        # Set false to close registration once admins exist
+ENABLE_ADMIN_OTP_REGISTRATION=false   # Set true if email OTP verification is required
 ```
 
-Start the server again afterwards: `server/src/db.js` re-creates the default admin
-(`fadhli@gmail.com` / `GrandOpening2026!`) whenever that account is missing, so
-deleting only the rows of the `admins` table has the same effect.
+---
 
-### Feature Flags (`.env`)
-Flags live in `server/src/features.js` and are read from the environment, so a
-feature can be parked without deleting its code:
+## 🔔 Modular Notification Providers
 
-| Flag | Default | Effect |
-| --- | --- | --- |
-| `ENABLE_ADMIN_REGISTRATION` | `true` (on) | Master switch for the "Daftar Akun Admin" flow. When off, `/api/auth/register*` answers `403` and the login page hides the "Daftar Sekarang" link. |
-| `ENABLE_ADMIN_OTP_REGISTRATION` | `false` (**off**) | E-mail verification for new admin accounts. **Off** → `POST /api/auth/register` creates the account straight away (no code to wait for). **On** → registration must go through `/api/auth/register/request-otp` + `/api/auth/register/verify-otp`, and direct registration is rejected so the e-mail check cannot be bypassed. |
-
-Login (`POST /api/auth/login`) is never affected by these flags. The OTP flow
-(routes, OTP store, SMTP delivery and the verification screen) is always kept in
-the codebase — a flag only parks it.
-
-Create a `.env` in the repo root (when running `npm start` / `npm run dev` from the
-root) **or** in `server/.env` (when starting from the `server/` folder) — both are
-picked up — then set:
-
-```bash
-ENABLE_ADMIN_REGISTRATION=true        # open/close admin signup (default: true)
-ENABLE_ADMIN_OTP_REGISTRATION=false   # off: register instantly, no OTP e-mail (default)
-ENABLE_ADMIN_OTP_REGISTRATION=true    # on: new accounts must be verified by OTP e-mail
-```
-
-Restart the server after changing a flag.
-
-> ⚠ While `ENABLE_ADMIN_OTP_REGISTRATION` is off, anyone who can reach the admin
-> portal can create an admin account. Close public signup with
-> `ENABLE_ADMIN_REGISTRATION=false` once your panitia accounts exist.
-
-
-
+Located in `server/src/notifications/`:
+- **`emailProvider.js`**: Simulated / SMTP email delivery for registration confirmations & admin OTPs.
+- **`whatsappProvider.js`**: Clean, pluggable stub ready to connect with any WhatsApp gateway API (e.g. Fonnte, Waha, Baileys, Twilio) without changing business logic.
 
 ---
 
 ## 📁 Project Structure
 
-```
+```text
+qr-system/
 ├── client/                     # Vite + React Frontend
 │   ├── src/
 │   │   ├── pages/
-│   │   │   ├── guest/          # Guest registration form & Ticket viewer
-│   │   │   └── admin/          # Admin Dashboard, Scanner, Participants & Events
-│   │   ├── components/         # TicketCard & Navbar
+│   │   │   ├── guest/          # Guest registration & Ticket view
+│   │   │   └── admin/          # Admin Dashboard, Scanner & Event Setup
+│   │   ├── components/         # TicketCard, Navbar, Modals
 │   │   └── api.js              # Lightweight API client
+│   └── package.json
+│
 ├── server/                     # Express Backend
 │   ├── src/
-│   │   ├── routes/             # Admin, Guest & Auth routes
-│   │   ├── notifications/      # Modular notification providers (Email, WhatsApp stub)
-│   │   ├── db.js               # Native SQLite auto-migration & seed
-│   │   ├── auth.js             # JWT auth middleware
-│   │   └── index.js            # Express server
+│   │   ├── routes/             # Admin, Guest, Auth & Event routes
+│   │   ├── notifications/      # Modular Notification Providers
+│   │   ├── db.js               # Native SQLite auto-migrations & seed
+│   │   ├── auth.js             # JWT authentication middleware
+│   │   └── index.js            # Express server entry point
+│   └── package.json
+│
 └── package.json                # Root scripts & workspaces
 ```
 
 ---
 
-## 🔔 Modular Notification Architecture
+## 📄 License
 
-Located in `server/src/notifications/`:
-- **`emailProvider.js`**: Simulated/SMTP email notification on registration.
-- **`whatsappProvider.js`**: Clean stub interface ready to plug in any WhatsApp Gateway (e.g. Fonnte, Waha, Baileys, Twilio) without modifying core registration or check-in logic.
+This project is licensed under the [MIT License](LICENSE).

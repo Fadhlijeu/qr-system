@@ -26,3 +26,6 @@ tmp/
 .vercel/
 _adminator_ref/
 _tmp_dump.cjs
+
+_tmp_show.cjs
+inventory-data/

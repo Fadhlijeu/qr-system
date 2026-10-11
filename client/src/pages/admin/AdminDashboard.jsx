@@ -12,8 +12,28 @@ export function AdminDashboard({ eventId, onNavigateToScanner, onNavigateToParti
     api.getConfig().then(setConfig).catch(() => {});
   }, [eventId]);
 
-  const loadDashboardData = async () => {
-    setLoading(true);
+  // Live refresh: the dashboard is used at the registration desk, so the KPIs
+  // have to advance while guests keep registering and checking in. Polls every
+  // 15s (only while the tab is visible) and refreshes instantly on focus.
+  useEffect(() => {
+    if (!eventId) return;
+
+    const refresh = () => {
+      if (document.visibilityState === "visible") loadDashboardData(false);
+    };
+
+    const interval = setInterval(refresh, 15000);
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [eventId]);
+
+  const loadDashboardData = async (showSpinner = true) => {
+    if (showSpinner) setLoading(true);
     try {
       if (eventId) {
         const res = await api.getDashboard(eventId);
@@ -24,7 +44,7 @@ export function AdminDashboard({ eventId, onNavigateToScanner, onNavigateToParti
     } catch (err) {
       console.error("Failed to load dashboard:", err);
     } finally {
-      setLoading(false);
+      if (showSpinner) setLoading(false);
     }
   };
 
@@ -266,7 +286,7 @@ export function AdminDashboard({ eventId, onNavigateToScanner, onNavigateToParti
           <div className="kpi-label" style={{ whiteSpace: "normal", overflow: "visible", fontSize: "13.5px", fontWeight: 600, color: "var(--t-muted)" }}>
             Belum Hadir
           </div>
-          <div className="kpi-value">{metrics?.pending_checkin || 0}</div>
+          <div className="kpi-value">{metrics?.not_checked_in || 0}</div>
           <div className="kpi-compare">Menunggu kedatangan</div>
         </article>
 
@@ -336,8 +356,8 @@ export function AdminDashboard({ eventId, onNavigateToScanner, onNavigateToParti
                         <span className="tag t-active">Hadir</span>
                       </td>
                       <td style={{ textAlign: "right", color: "var(--t-light)", fontSize: "12px" }}>
-                        {item.checkin_time
-                          ? new Date(item.checkin_time).toLocaleTimeString("id-ID", {
+                        {item.checked_in_at
+                          ? new Date(item.checked_in_at).toLocaleTimeString("id-ID", {
                               hour: "2-digit",
                               minute: "2-digit"
                             })

@@ -1,7 +1,7 @@
 {
-  "name": "qr-grand-opening",
+  "name": "qr-system",
   "version": "1.0.0",
-  "description": "Minimal QR Event Registration & Check-in System",
+  "description": "QR System — Universal Event Registration, E-Ticketing & High-Speed QR Check-in Platform (React + Express + SQLite)",
   "type": "module",
   "scripts": {
     "install:all": "npm install --prefix server && npm install --prefix client",
@@ -13,5 +13,13 @@
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Fadhlijeu/qr-system.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Fadhlijeu/qr-system/issues"
+  },
+  "homepage": "https://github.com/Fadhlijeu/qr-system#readme"
 }

@@ -281,10 +281,11 @@ router.get("/events/:id/dashboard", (req, res) => {
   res.json({
     event,
     metrics: {
-      registered,
+      // Keys must match what AdminDashboard.jsx reads.
+      total_registered: registered,
       checked_in: checkedIn,
       not_checked_in: notCheckedIn,
-      attendance_percentage: attendanceRate,
+      attendance_rate: attendanceRate,
     },
     recent_checkins: recentCheckins,
   });
